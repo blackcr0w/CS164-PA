@@ -1504,7 +1504,7 @@ Main.main:
 	move	$a0 $s0
 	bne	$a0 $zero label105
 	la	$a0 str_const4
-	li	$t1 30
+	li	$t1 33
 	jal	_dispatch_abort
 label105:
 	lw	$t1 8($a0)
@@ -1530,7 +1530,7 @@ label108:
 	move	$a0 $s0
 	bne	$a0 $zero label110
 	la	$a0 str_const4
-	li	$t1 33
+	li	$t1 36
 	jal	_dispatch_abort
 label110:
 	lw	$t1 8($a0)
@@ -1542,7 +1542,7 @@ label110:
 	move	$a0 $s1
 	bne	$a0 $zero label111
 	la	$a0 str_const4
-	li	$t1 34
+	li	$t1 37
 	jal	_dispatch_abort
 label111:
 	lw	$t1 8($a0)
@@ -1554,7 +1554,7 @@ label111:
 	move	$a0 $s1
 	bne	$a0 $zero label112
 	la	$a0 str_const4
-	li	$t1 35
+	li	$t1 38
 	jal	_dispatch_abort
 label112:
 	lw	$t1 8($a0)
@@ -1566,7 +1566,7 @@ label112:
 	move	$a0 $s0
 	bne	$a0 $zero label113
 	la	$a0 str_const4
-	li	$t1 37
+	li	$t1 40
 	jal	_dispatch_abort
 label113:
 	lw	$t1 8($a0)
@@ -1575,7 +1575,7 @@ label113:
 	move	$a0 $s0
 	bne	$a0 $zero label114
 	la	$a0 str_const4
-	li	$t1 38
+	li	$t1 41
 	jal	_dispatch_abort
 label114:
 	lw	$t1 8($a0)
@@ -1587,7 +1587,7 @@ label114:
 	move	$a0 $s0
 	bne	$a0 $zero label115
 	la	$a0 str_const4
-	li	$t1 39
+	li	$t1 42
 	jal	_dispatch_abort
 label115:
 	lw	$t1 8($a0)
@@ -1598,7 +1598,7 @@ label115:
 	move	$a0 $s0
 	bne	$a0 $zero label116
 	la	$a0 str_const4
-	li	$t1 40
+	li	$t1 43
 	jal	_dispatch_abort
 label116:
 	lw	$t1 8($a0)
@@ -1607,7 +1607,7 @@ label116:
 	move	$a0 $s0
 	bne	$a0 $zero label117
 	la	$a0 str_const4
-	li	$t1 41
+	li	$t1 44
 	jal	_dispatch_abort
 label117:
 	lw	$t1 8($a0)

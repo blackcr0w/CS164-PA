@@ -11,6 +11,38 @@
  *
  *)
 
+class StackCommand inherits Cons {
+	stack : List;
+	head : Int;
+
+    display_stack(l : List) : Object {
+		if l.isNil() then out_string("\n")
+			else {
+				out_int(l.head());
+				out_string(" ");
+				print_stack(l.tail());
+            }
+            fi
+    };
+
+    push(i : Int) : Object {
+    	{
+    		if stack.isNil()
+    			stack <- (new List).cons(i)
+    		else
+    			stack <- stack.cons(i)
+    		fi
+        }
+    };
+
+    pop() : Int {
+    	{
+    		head <- stack.head();
+    		stack <- stack.tail();
+    		head;
+        }
+    };
+    
 
 
 class Main inherits IO {
