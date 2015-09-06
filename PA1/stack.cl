@@ -25,14 +25,15 @@ class StackCommand inherits Cons {
             fi
     };
 
-    push(i : Int) : Object {
+    push(i : Int) : Int {
     	{
     		if stack.isNil()
-    			stack <- (new List).cons(i)
+    			stack <- new List
     		else
     			stack <- stack.cons(i)
     		fi
-        }
+        };
+        0;
     };
 
     pop() : Int {

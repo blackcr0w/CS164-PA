@@ -12,7 +12,7 @@ Class Book inherits IO {
         }
     };
 
-    print() : Book {
+    print() : Book {  -- can also use SELF_TPYE
         {
             out_string("title:      ").out_string(title).out_string("\n");
             out_string("author:     ").out_string(author).out_string("\n");
@@ -35,7 +35,7 @@ Class Article inherits Book {
 
     print() : Book {
         {
-	    self@Book.print();
+	    self@Book.print();  --remember this special self@Book
             out_string("periodical:  ").out_string(per_title).out_string("\n");
             self;
         }

@@ -7,6 +7,7 @@ on the screen.  Typing "stop" at the prompt exits the program.
 *)
 
 class Main inherits IO {
+
    newline() : Object {
 	out_string("\n")
    };
