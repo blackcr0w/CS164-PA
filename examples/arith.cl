@@ -10,7 +10,7 @@ class A {
 
    value() : Int { var };
 
-   set_var(num : Int) : SELF_TYPE {
+   set_var(num : Int) : SELF_TYPE {  -- return self, work as constructor
       {
          var <- num;
          self;
@@ -21,12 +21,12 @@ class A {
       self
    };
 
-   method2(num1 : Int, num2 : Int) : B {  -- plus
+   method2(num1 : Int, num2 : Int) : B {  -- plus, return a new instance
       (let x : Int in
 	 {
             x <- num1 + num2;
 	    (new B).set_var(x);
-	 }
+	 }  -- this semicolon is for aggregating the two statememts
       )
    };
 
