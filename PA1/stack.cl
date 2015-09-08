@@ -121,16 +121,21 @@ class Main inherits IO {
     };
 
     swap(l : List) : Object {
-    	{
+    	
     		(let s1 : String, s2 : String in
-    		{
+    		
+    			if l.isNil() then 
+    				0
+    			else if l.tail().isNil() then 
+    				0
+    			else {
     		    s1 <- pop();
     		    s2 <- pop();
     		    push(s1);
     		    push(s2);
-            }
-            );
-        }
+                }
+           fi fi 
+            )
     };
 
     evalu(l : List) : Object {
@@ -156,18 +161,18 @@ class Main inherits IO {
     main() : Object {
     	{
     		stack <- new List;
+    		s <- prompt();
 
-    		while true loop {
-            	s <- prompt();
+    		while not s = "x" loop {
             	if s = "e" then
             		evalu(stack)
             	else if s = "d" then
             		display(stack)
-            	else if s = "x" then
-            		abort()              (**************)
             	else 
             		push(s)
-               fi fi fi;
+               fi fi;
+
+               s <- prompt();
             }
             pool;
     }
