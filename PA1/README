@@ -65,10 +65,26 @@ Questions on PA1
 
 1. Describe your implementation of the stack machine in a single short
    paragraph.
-
+   
+   Answer:
+        I uesed the "List" and "Cons" class implemented in "list.cl" to implement 
+        my "stack".
 
 2. List 3 things that you like about the Cool programming language.
+    
+    Amswer:
+        1) Support expressional programming, which makes "return" easier and more
+           flexible.
 
+        2) Support basic OOP properties, including inheritence and dynamic-dispatch.
+
+        3) "let" expression makes the 
 
 3. List 3 things you DON'T like about Cool.
 
+    Answer:
+        1) The useage of semicoln and brace is quite tricky.
+
+        2) Do not support advanced OOP properties, such as multiple inheritence. Did            not regulate "pass by value" or "pass by reference".
+
+        3) The primitive types supported is limited. Important types such as float is           not supported. 
