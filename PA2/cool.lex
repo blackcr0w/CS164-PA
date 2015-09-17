@@ -97,12 +97,12 @@ import java_cup.runtime.Symbol;
  * Reference Manual (CoolAid).  Please be sure to look there. */
 %%
 
-<YYINITIAL>\n	 { /* Fill-in here. */ }
-<YYINITIAL>\s+ { /* Fill-in here. */ }
+<YYINITIAL>\n	 { curr_lineno++;  }
+<YYINITIAL>\s+   {  }
 
-<YYINITIAL>"--"         { /* Fill-in here. */ }
-<LINE_COMMENT>.*        { /* Fill-in here. */ }
-<LINE_COMMENT>\n        { /* Fill-in here. */ }
+<YYINITIAL>"--"         { yybegin(LINE_COMMENT); }
+<LINE_COMMENT>.*        { }
+<LINE_COMMENT>\n        { curr_lineno++; yybegin(YYINITIAL); }
 
 
 
