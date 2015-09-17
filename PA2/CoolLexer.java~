@@ -393,7 +393,6 @@ class CoolLexer implements java_cup.runtime.Scanner {
     void deleteEscape(StringBuffer toDelete) {
         for (int i = 0; i < toDelete.length(); i++) {
             char potential_backslash = toDelete.charAt(i);
-            System.out.println(potential_backslash); 
             if (potential_backslash == '\\') {
                 char nextone = toDelete.charAt(i + 1);
                 if (nextone == 'n' || nextone == 'b' || nextone == 't' || nextone == 'f')
