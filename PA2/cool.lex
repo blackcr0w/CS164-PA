@@ -38,16 +38,42 @@ import java_cup.runtime.Symbol;
 
     
     void deleteEscape(StringBuffer toDelete) {
-    	for (int i = 0; i < toDelete.length(); i++) {
+        for (int i = 0; i < toDelete.length(); i++) {
             char potential_backslash = toDelete.charAt(i);
             if (potential_backslash == '\\') {
                 char nextone = toDelete.charAt(i + 1);
                 if (nextone == 'n' || nextone == 'b' || nextone == 't' || nextone == 'f')
-                	;
+                   {
+                       if (nextone == 'n') {
+                     toDelete.setCharAt(i, '\n');
+                     toDelete.deleteCharAt(i + 1);
+                       }
+                       else if (nextone == 'b') {
+                     toDelete.setCharAt(i, '\b');
+                     toDelete.deleteCharAt(i + 1);
+                       }
+                       else if(nextone == 't') {
+                     toDelete.setCharAt(i, '\t');
+                     toDelete.deleteCharAt(i + 1);
+                       }
+                       else if(nextone == 'f') {
+                     toDelete.setCharAt(i, '\f');
+                     toDelete.deleteCharAt(i + 1);
+                       }
+                    }
                 else {
                 	toDelete.deleteCharAt(i);
                 }
             }
+            
+            /*
+            if (potential_backslash == '\n') {
+                System.out.println("it is \n");
+                break;
+            } else if (potential_backslash == '\\') {
+                System.out.println("it is \\");
+            }
+            */
         }
     } 
 
@@ -134,11 +160,10 @@ import java_cup.runtime.Symbol;
                           return new Symbol(TokenConstants.INT_CONST,
 					    AbstractTable.inttable.addString(yytext())); }
 
-<YYINITIAL>\"   { string_buf.setLength(0); yybegin(STRING); }
+<YYINITIAL>\"  { string_buf.setLength(0); yybegin(STRING); }
 	
-
-<STRING>[^\n\b\t\f]+     { deleteEscape(string_buf); string_buf.append(yytext()); }
-<STRING>\" { yybegin(YYINITIAL); return new Symbol(TokenConstants.STR_CONSTANT, AbstractTable.stringtable.addString(string_buf.toString())) }
+<STRING>[^\n\"]* { string_buf.append(yytext()); }
+<STRING>\" { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); }
 
 
 
