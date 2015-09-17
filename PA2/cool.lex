@@ -36,6 +36,21 @@ import java_cup.runtime.Symbol;
 	return filename;
     }
 
+    
+    void deleteEscape(StringBuffer toDelete) {
+    	for (int i = 0; i < toDelete.length(); i++) {
+            char potential_backslash = toDelete.charAt(i);
+            if (potential_backslash == '\\') {
+                char nextone = toDelete.charAt(i + 1);
+                if (nextone == 'n' || nextone == 'b' || nextone == 't' || nextone == 'f')
+                	;
+                else {
+                	toDelete.deleteCharAt(i);
+                }
+            }
+        }
+    } 
+
     /*
      * Add extra field and methods here.
      */
@@ -79,6 +94,7 @@ import java_cup.runtime.Symbol;
  * .
  * Hint: You might need additional start conditions. */
 %state LINE_COMMENT
+%state STRING
 
 
 /* Define lexical rules after the %% separator.  There is some code
@@ -118,7 +134,11 @@ import java_cup.runtime.Symbol;
                           return new Symbol(TokenConstants.INT_CONST,
 					    AbstractTable.inttable.addString(yytext())); }
 
+<YYINITIAL>\"   { string_buf.setLength(0); yybegin(STRING); }
+	
 
+<STRING>[^\n\b\t\f]+     { deleteEscape(string_buf); string_buf.append(yytext()); }
+<STRING>\" { yybegin(YYINITIAL); return new Symbol(TokenConstants.STR_CONSTANT, AbstractTable.stringtable.addString(string_buf.toString())) }
 
 
 
@@ -149,9 +169,8 @@ import java_cup.runtime.Symbol;
 <YYINITIAL> "SLEF_TYPE"    { return new Symbol(TokenConstants.TYPEID); }
 
 
-<YYINITIAL>[a-z][a-zA-Z0-9_]*    { return new Symbol(TokenConstants.OBJECTID); }
+<YYINITIAL>[a-z][A-Za-z0-9_]* { return new Symbol(TokenConstants.OBJECTID, AbstractTable.idtable.addString(yytext())); }
 
-<YYINITIAL> [A-Z][a-zA-Z09_]* { return new Symbol(TokenConstants.TYPEID);}
 
 <YYINITIAL>"+"			{ return new Symbol(TokenConstants.PLUS); }
 <YYINITIAL>"/"			{ return new Symbol(TokenConstants.DIV); }
@@ -170,7 +189,7 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>"}"			{ return new Symbol(TokenConstants.RBRACE); }
 <YYINITIAL>"{"			{ return new Symbol(TokenConstants.LBRACE); }
 
-
+<YYINITIAL>"->"			{ return new Symbol(TokenConstants.ASSIGN); }
 
 
 .                { /*
