@@ -144,9 +144,14 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>[Ww][Hh][Ii][Ll][Ee] { return new Symbol(TokenConstants.WHILE); }
 
 
+<YYINITIAL> "self"    { return new Symbol(TokenConstants.OBJECTID); }
+
+<YYINITIAL> "SLEF_TYPE"    { return new Symbol(TokenConstants.TYPEID); }
 
 
+<YYINITIAL>[a-z][a-zA-Z0-9_]*    { return new Symbol(TokenConstants.OBJECTID); }
 
+<YYINITIAL> [A-Z][a-zA-Z09_]* { return new Symbol(TokenConstants.TYPEID);}
 
 <YYINITIAL>"+"			{ return new Symbol(TokenConstants.PLUS); }
 <YYINITIAL>"/"			{ return new Symbol(TokenConstants.DIV); }
