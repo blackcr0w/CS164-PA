@@ -16,6 +16,7 @@ import java_cup.runtime.Symbol;
 %{
     // Max size of string constants
     static int MAX_STR_CONST = 1024;
+    int comment_depth = 0;      // counting the depth of nested comment 
 
     // For assembling string constants
     StringBuffer string_buf = new StringBuffer();
@@ -116,7 +117,10 @@ import java_cup.runtime.Symbol;
 %eofval{
     switch(yystate()) {
     case YYINITIAL:
-	/* nothing special to do in the initial state */
+        {   
+            System.out.println("enter the eofval.");
+            //return new Symbol(TokenConstants.TYPEID); }
+
 	break;
 
 /* If necessary, add code for other states here, e.g:
@@ -173,10 +177,26 @@ import java_cup.runtime.Symbol;
 
 
 <YYINITIAL>"--"         { yybegin(LINE_COMMENT); }
+
+<YYINITIAL>"(*"         { yybegin(NESTED_COMMENT); comment_depth++; }
+<YYINITIAL>"*)"         { /* output ERROR msg */ }
+
+// for debug
+<YYINITIAL>EOF      { System.out.pringtln("meeting the EOF");
+                      yy_do_eof(); }
+
+
 <LINE_COMMENT>.*        { }
-<LINE_COMMENT>\n        { curr_lineno++; yybegin(YYINITIAL); }
+<LINE_COMMENT>\n        { ++curr_lineno; yybegin(YYINITIAL); }
 
 
+<NESTED_COMMENT>"(*"     { ++comment_depth; }
+<NESTED_COMMENT>"*)"     { --commment_depth; 
+                          if (comment_depth == 0
+                          	  yybegin(YYINITIAL);
+                          /* return something */ }
+<NESTED_COMMENT>\n       { ++curr_lineno; }
+<NESTED_COMMNET>.        { /* do something */ }
 
 
 
@@ -193,7 +213,7 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>\"  { string_buf.setLength(0); yybegin(STRING); }
 	
 <STRING>[^\n\"]* { string_buf.append(yytext()); }
-<STRING>\" { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); }
+<STRING>\n { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); }
 
 
 
