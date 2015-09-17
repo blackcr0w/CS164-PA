@@ -16,7 +16,6 @@ import java_cup.runtime.Symbol;
 %{
     // Max size of string constants
     static int MAX_STR_CONST = 1024;
-    int comment_depth = 0;      // counting the depth of nested comment 
 
     // For assembling string constants
     StringBuffer string_buf = new StringBuffer();
@@ -182,21 +181,12 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>"*)"         { /* output ERROR msg */ }
 
 // for debug
-<YYINITIAL>EOF      { System.out.pringtln("meeting the EOF");
+<YYINITIAL>EOF      { System.out.println("meeting the EOF");
                       yy_do_eof(); }
 
 
 <LINE_COMMENT>.*        { }
 <LINE_COMMENT>\n        { ++curr_lineno; yybegin(YYINITIAL); }
-
-
-<NESTED_COMMENT>"(*"     { ++comment_depth; }
-<NESTED_COMMENT>"*)"     { --commment_depth; 
-                          if (comment_depth == 0
-                          	  yybegin(YYINITIAL);
-                          /* return something */ }
-<NESTED_COMMENT>\n       { ++curr_lineno; }
-<NESTED_COMMNET>.        { /* do something */ }
 
 
 
