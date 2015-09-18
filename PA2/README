@@ -122,3 +122,83 @@ Instructions
 Write-up for PA2J
 -----------------
 
+                        CS164 PA1 Deisgn Doc
+
+
+        ----GROUP----
+        Jaeseo Lee <jaeseolee96@gmail.com> login: dn
+        Mingjie Zhao <jackzhao.mj@gmail.com> login: cp
+
+        
+        ----GENERAL DESIGN GOAL----
+        In normal case, the lexer will read the program stream, return 
+        <token-name, attribute-value> to the parser, and report error
+        message.
+
+        JFlex can generate lexer according to the ReGex we wrote. So our
+        job is to wrote correct ReGex which matches the pattern, and do
+        state-transformation for to execute different methods.
+
+
+        ----HANDLE COMMENTS----
+        The initial state, YYINITIAL will do the following: when '\n' is
+        met, we increase the line number. And it will match patterns.
+
+        Line comment is easy to match and it only transforms between two 
+        states: YYINITIAL and LINE_COMMENT. 
+
+        For nested comments, the YYINITIAL state will tranforms to COMMENT
+        state when "(*" matches. In COMMENT state, we set a counter, 
+        openCommentCounter, to keep track of the depth of nested comment.
+        When "(*" is met, we add the counter by one. When "*)" is met,
+        we first check if it is zero. If it is, we transform the state to 
+        YYINITIAL. If not, we keep reading the the imput stream.
+
+        If unnested comment occurs, we return the ERROR token with error
+        message.
+
+        If '\n' matches, we add the line number.
+
+
+        ----HANDLE STRING----
+        In initial state, if '\"' matches, the lexer transfer to STRING state.
+        In string state, we handle three special cases: a too long string,
+        unmatched string and special characters (i.e. null) inside a stirng.
+        
+        Whenever it appends a character into string buffer, it checks string 
+        buffer's length, and if it is over 1024, then we return an error token,
+        and keep lexing. When already returns a token, we do not check for null
+        character. On the other hand, if it saw a null character before it reaches
+        length limit, then we do not check the string length. In both cases, it
+        still checks if the string is properly terminated.
+
+        ----EOF----
+        If EOF is inside a string or comment, it returns proper ERROR message.
+
+        When it hits EOF, it checks the state of lexer. If it is in COMMENT,
+        or STRING state, it implies that EOF is inside a string or comment.
+
+
+        ----TESTS----
+        Our code pass works well on tests in ./tests/. And we run "mycoolc"
+        to compile the stack machine in PA1, everything goes well.
+
+        Beside of these, we wrote other test for coner cases in test.cl. And 
+        when implementing the requied lexing funcion specified in the handout, 
+        we tested out funcion all the time.
+
+        In test.cl, our tests focused on XX cases:
+
+        When special characters (i.e. null) and  appears inside a comment.
+
+        When escaped characters and EOF appears inside a string. And a too
+        long string case.
+
+        When invalid characters appears.
+
+        The lexer works well for these corner cases.
+        
+
+        We wish to use slip our of roundup (10/60) hour.
+        We are late for 10 minutes. Gods have mercy.
+

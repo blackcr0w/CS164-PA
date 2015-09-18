@@ -42,12 +42,15 @@ import java_cup.runtime.Symbol;
     void deleteEscape(StringBuffer toDelete) {
         for (int i = 0; i < toDelete.length(); i++) {
            char potential_backslash = toDelete.charAt(i);
+           
+            System.out.println("in method scope");
            if (potential_backslash == '\n' || potential_backslash == '\t')
                System.out.println("matched the newline.");
            if (potential_backslash == '\\') {
                 char nextone = toDelete.charAt(i + 1);
                 if (nextone == 'n' || nextone == 'b' || nextone == 't' || nextone == 'f')
                    {
+                       System.out.println("in escape");
                        if (nextone == 'n') {
                      toDelete.setCharAt(i, '\n');
                      System.out.println(toDelete.charAt(i);
@@ -67,6 +70,8 @@ import java_cup.runtime.Symbol;
                        }
                     }
                 else {
+                    
+                    System.out.println("in non escape");
                 	toDelete.deleteCharAt(i);
                 }
             }

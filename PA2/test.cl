@@ -42,7 +42,7 @@ class CellularAutomaton inherits IO {
         else
             cell(position + 1)
         fi
-    };
+    }; double-quot
    
     (* a cell will live if exactly 1 of itself and it's immediate
        neighbors are alive *)
@@ -78,7 +78,62 @@ class CellularAutomaton inherits IO {
 
 class Main {
     cells : CellularAutomaton;
-   
+
+    test_string : string;
+
+    test_string() : SELF_TYPE {
+
+        (* a string with mis-matched double-quote *)
+        out_string(""""");
+
+        (* unescaped new line inside string *)
+        out_string("I'm\
+        ok");
+
+        (* escaped new line inside a string *)
+        out_string("not 
+        ok");
+
+
+        (* a string longre than MAX_STR_CONST *)
+        (let i : Int <- 1025 in
+            while (i > 0) loop
+            {
+                test_string <- test_string.concat("a");
+                i <- i - 1;
+            }
+            pool
+        );
+
+
+        (* a null inside a string *)
+        test_string <- "\0";
+        out_string(test_string);
+
+        
+        (* combined: a null inside a string, and the string is longer than the limit, and the double-quote does not match *)
+
+    }
+
+
+    test_nested_comment() : SELF_TYPE {
+    
+        (* close comment ("*)") outside a comment *)
+        *)
+
+    }
+
+
+    test_errors() : SELF_TYPE {
+
+        (* test on invalid character *)
+        {
+            \000;
+            !;
+        }
+    }
+
+
     main() : SELF_TYPE {
         {
             cells <- (new CellularAutomaton).init("         X         ");
@@ -92,7 +147,10 @@ class Main {
                     
                 pool
             );  (* end let countdown
+        
+
             self;
         }
+        
     };
 };
