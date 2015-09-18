@@ -16,10 +16,12 @@ import java_cup.runtime.Symbol;
 %{
     // Max size of string constants
     static int MAX_STR_CONST = 1024;
-    int comment_depth = 0;      // counting the depth of nested comment 
 
     // For assembling string constants
     StringBuffer string_buf = new StringBuffer();
+
+    // Keep track of number of nestedly opened comment. Should be 0 or greater.
+    private int openCommentCounter = 0;
 
     // For line numbers
     private int curr_lineno = 1;
@@ -66,16 +68,30 @@ import java_cup.runtime.Symbol;
                 }
             }
             
-            /*
-            if (potential_backslash == '\n') {
-                System.out.println("it is \n");
-                break;
-            } else if (potential_backslash == '\\') {
-                System.out.println("it is \\");
-            }
-            */
         }
-    } 
+    }
+
+    /* commentOpen is called when lexer sees '(*', it increments the
+     * open comment counter.
+     */
+    void commentOpen () {
+        openCommentCounter++;
+    }
+    
+    /* commentClose is called when lexer sees '*)'.
+     * It decrements the open comment counter and returns it.
+     */
+    int commentClose () {
+        openCommentCounter--;
+        return openCommentCounter;
+    }
+
+    /* getCommentCounter simply returns openCommentCounter
+     * @return open comment counter
+     */
+    int getCommentCounter () {
+        return openCommentCounter;
+    }
 
     /*
      * Add extra field and methods here.
@@ -124,7 +140,7 @@ import java_cup.runtime.Symbol;
  * Hint: You might need additional start conditions. */
 %state LINE_COMMENT
 %state STRING
-%state NESTED_COMMENT
+%state COMMENT
 
 
 /* Define lexical rules after the %% separator.  There is some code
@@ -146,27 +162,26 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>\n	 { curr_lineno++;  }
 <YYINITIAL>\s+   {  }
 
+<YYINITIAL>"(*"  { commentOpen(); yybegin(COMMENT); }
+
+<COMMENT>"(*" { commentOpen(); }
+<COMMENT>"*)" { if (commentClose() == 0) yybegin(YYINITIAL); }
+<COMMENT>[^\n\*\)\(]*   { }
+<COMMENT>[\*\)\(] { }
+<COMMENT>\n   { curr_lineno++; }
+
+
+<YYINITIAL>"*)" { System.out.println("Should raise an error here."); }
+
+
 <YYINITIAL>"--"         { yybegin(LINE_COMMENT); }
 
 <YYINITIAL>"(*"         { yybegin(NESTED_COMMENT); comment_depth++; }
 <YYINITIAL>"*)"         { /* output ERROR msg */ }
 
-// for debug
-<YYINITIAL>"EOF"     { System.out.pringtln("meeting the EOF");
-                      yy_do_eof(); }
-
 
 <LINE_COMMENT>.*        { }
 <LINE_COMMENT>\n        { ++curr_lineno; yybegin(YYINITIAL); }
-
-
-<NESTED_COMMENT>"(*"     { ++comment_depth; }
-<NESTED_COMMENT>"*)"     { --commment_depth; 
-                          if (comment_depth == 0
-                          	  yybegin(YYINITIAL);
-                          /* return something */ }
-//<NESTED_COMMENT>\n       { ++curr_lineno; }
-<NESTED_COMMNET>.        { /* do something */ }
 
 
 
