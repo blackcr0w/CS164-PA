@@ -123,6 +123,10 @@ import java_cup.runtime.Symbol;
             //return new Symbol(TokenConstants.TYPEID); }
 
 	break;
+	
+	case STRING:
+	    // error msg, EOF in string
+
 
 /* If necessary, add code for other states here, e.g:
     case LINE_COMMENT:
@@ -202,8 +206,9 @@ import java_cup.runtime.Symbol;
 	
 <STRING>[^\n\"]* { string_buf.append(yytext()); }
 <STRING>\" { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); } //this is for beauty"
-
-
+<STRING>\n   { error here
+<STRING>\0   { error here
+<STRING>\\n  { escape here
 
 
 <YYINITIAL>[Cc][Aa][Ss][Ee]	{ return new Symbol(TokenConstants.CASE); }
