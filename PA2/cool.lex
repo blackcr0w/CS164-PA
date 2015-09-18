@@ -41,13 +41,16 @@ import java_cup.runtime.Symbol;
     
     void deleteEscape(StringBuffer toDelete) {
         for (int i = 0; i < toDelete.length(); i++) {
-            char potential_backslash = toDelete.charAt(i);
-            if (potential_backslash == '\\') {
+           char potential_backslash = toDelete.charAt(i);
+           if (potential_backslash == '\n' || potential_backslash == '\t')
+               System.out.println("matched the newline.");
+           if (potential_backslash == '\\') {
                 char nextone = toDelete.charAt(i + 1);
                 if (nextone == 'n' || nextone == 'b' || nextone == 't' || nextone == 'f')
                    {
                        if (nextone == 'n') {
                      toDelete.setCharAt(i, '\n');
+                     System.out.println(toDelete.charAt(i);
                      toDelete.deleteCharAt(i + 1);
                        }
                        else if (nextone == 'b') {
@@ -114,7 +117,7 @@ import java_cup.runtime.Symbol;
  *  work. */
 %eofval{
     
-    switch(yystate()) {
+/*  switch(yystate()) {
     case YYINITIAL:
         {   
             //return new Symbol(TokenConstants.TYPEID); }
@@ -125,8 +128,8 @@ import java_cup.runtime.Symbol;
     case LINE_COMMENT:
 	   ...
 	   break;
- */
-    }
+ 
+    } */
     return new Symbol(TokenConstants.EOF);
 %eofval}
 
@@ -198,7 +201,7 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>\"  { string_buf.setLength(0); yybegin(STRING); }
 	
 <STRING>[^\n\"]* { string_buf.append(yytext()); }
-<STRING>\n { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); }
+<STRING>\" { yybegin(YYINITIAL); deleteEscape(string_buf);  return new Symbol(TokenConstants.STR_CONST, AbstractTable.stringtable.addString(string_buf.toString())); } //this is for beauty"
 
 
 
