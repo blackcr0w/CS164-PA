@@ -36,7 +36,6 @@ import java_cup.runtime.Symbol;
     AbstractSymbol curr_filename() {
 	return filename;
     }
-
     
     void deleteEscape(StringBuffer toDelete) {
         for (int i = 0; i < toDelete.length(); i++) {
@@ -98,10 +97,10 @@ import java_cup.runtime.Symbol;
  *  Ultimately, you should return the EOF symbol, or your lexer won't
  *  work. */
 %eofval{
+    
     switch(yystate()) {
     case YYINITIAL:
         {   
-            System.out.println("enter the eofval.");
             //return new Symbol(TokenConstants.TYPEID); }
 
 	break;
@@ -153,7 +152,7 @@ import java_cup.runtime.Symbol;
 <YYINITIAL>"*)"         { /* output ERROR msg */ }
 
 // for debug
-<YYINITIAL>EOF      { System.out.pringtln("meeting the EOF");
+<YYINITIAL>"EOF"     { System.out.pringtln("meeting the EOF");
                       yy_do_eof(); }
 
 
@@ -166,7 +165,7 @@ import java_cup.runtime.Symbol;
                           if (comment_depth == 0
                           	  yybegin(YYINITIAL);
                           /* return something */ }
-<NESTED_COMMENT>\n       { ++curr_lineno; }
+//<NESTED_COMMENT>\n       { ++curr_lineno; }
 <NESTED_COMMNET>.        { /* do something */ }
 
 
