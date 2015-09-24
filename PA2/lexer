@@ -1,0 +1,3 @@
+#!/bin/sh
+java -classpath /home/ff/cs164/lib/java-cup-11b.jar:/home/ff/cs164/lib/java-cup-11b-runtime.jar:.:/usr/java/lib/rt.jar:`dirname $0` Lexer $*
+    
