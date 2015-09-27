@@ -6,6 +6,10 @@
  *
  * Parser definition for the Cool language.
  *
+ * Author: Mingjie Zhao
+ * Login:  cs164-cp
+ * Time:   Sep.24, 2015, Berkeley
+ *
  */
 
 import java_cup.runtime.*;
@@ -54,6 +58,7 @@ parser code {:
 /* Declare the terminals; a few have types for associated lexemes.  The
 token ERROR is never used in the parser; thus, it is a parse error when
 the lexer returns it.  */
+// jk: why ERROR is not used in parser?
 terminal CLASS, ELSE, FI, IF, IN, INHERITS, LET, LET_STMT, LOOP, POOL, THEN, WHILE;
 terminal CASE, ESAC, OF, DARROW, NEW, ISVOID;
 terminal ASSIGN, NOT, LE, ERROR;

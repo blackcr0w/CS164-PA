@@ -1,1 +1,5 @@
-/home/ff/cs164/etc/../assignments/PA3/tests/good1.test
+class Hello {
+};
+
+class Goodbye {
+};
