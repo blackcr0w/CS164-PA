@@ -76,8 +76,12 @@ nonterminal programc program;
 nonterminal Classes class_list;
 nonterminal class_c class;
 nonterminal Features optional_feature_list;
+nonterminal Feature feature;
+nonterminal Formals formal_list;
+nonterminal Formal formal;
 nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
+nonterminal Expression let_optional_init
 
 
 /*
@@ -93,7 +97,6 @@ precedence left ISVOID;
 precedence left NEG;
 precedence left AT;
 precedence left DOT;
-
 
 
 /***********************************************************************
@@ -142,12 +145,33 @@ class
 optional_feature_list
 	::= /* empty */
 	    {: RESULT = new Features(curr_lineno()); :}
+  /* one feature */
+  | feature: f SEMI
+      {: RESULT = (new Features(curr_lineno())).appendElement(f); :}
+  /* multiple features */
+  | optional_feature_list:ofl feature:f SEMI
+      {: RESULT = ofl.appendElement(f); :}
 	;
 
+feature
+  /* attribute feature */
+  ::= OBJECTID:oid COLON TYPEID:tid
+      {: RESULT = new attr(curr_lineno(), oid, tid, new no_expr(curr_lineno())); :}
+  /* attribute feature with assignment */
+  | OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e
+      {: RESULT = new attr(curr_lineno(), oid, tid, e); :}
+  /* method feature */
+  | OBJECTID:oid LPAREN formal_list:fl RPAREN COLON TYPEID:tid LBRACE expr:e RBRACE
+      {: RESULT = new method(curr_lineno(), oid, fl, tid, e); :}
+  ;
 
 /* Expressions */
 expr
-	::= expr:e1 PLUS expr:e2
+	::= LET OBJECTID:oid TYPEID:tid IN expr:e
+	    {: RESULT = new let(curr_lineno(), id, tid, e); :}
+  | LET OBJECTID:oid TYPEID:tid ASSIGN expr:e1 IN expr:e2
+      {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
+  | expr:e1 PLUS expr:e2
 	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
@@ -181,6 +205,23 @@ expr
 	                                        AbstractTable.idtable.addString("self")),
 				     n, a); :}
         ;
+
+
+/* method formal parameters */
+formal_list
+  /* no parameters */
+  ::=w
+      {: RESULT = new Formals(curr_lineno()); :}
+  | formal:f
+      {: RESULT = (new Formals(curr_lineno())).appendElement(f); :}
+  | formal_list:fl COMMA formal:f
+      {: RESULT = fl.appendElement(f); :}
+  ;
+
+formal
+  ::= OBJECTID:oid COLON TYPEID:tid
+      {: RESULT = new formalc(curr_lineno(), oid, tid); :}
+  ;
 
 
 /* Method arguments */
