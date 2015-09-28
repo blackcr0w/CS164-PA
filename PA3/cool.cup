@@ -81,7 +81,8 @@ nonterminal Formals formal_list;
 nonterminal Formal formal;
 nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
-nonterminal Expression let_optional_init
+nonterminal Expression let_init;
+nonterminal Expression let_body;
 
 
 /*
@@ -141,7 +142,7 @@ class
 	    {: RESULT = new class_c(curr_lineno(), n, p, f, curr_filename()); :}
 	;
 
-
+/* features include attributes and methods */
 optional_feature_list
 	::= /* empty */
 	    {: RESULT = new Features(curr_lineno()); :}
@@ -153,6 +154,7 @@ optional_feature_list
       {: RESULT = ofl.appendElement(f); :}
 	;
 
+/* a single feature */
 feature
   /* attribute feature */
   ::= OBJECTID:oid COLON TYPEID:tid
@@ -167,9 +169,9 @@ feature
 
 /* Expressions */
 expr
-	::= LET OBJECTID:oid TYPEID:tid IN expr:e
+	::= LET OBJECTID:oid COLON TYPEID:tid IN expr:e
 	    {: RESULT = new let(curr_lineno(), id, tid, e); :}
-  | LET OBJECTID:oid TYPEID:tid ASSIGN expr:e1 IN expr:e2
+  | LET OBJECTID:oid COLON let_optional_init:loi IN expr:e2
       {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
   | expr:e1 PLUS expr:e2
 	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
@@ -205,6 +207,15 @@ expr
 	                                        AbstractTable.idtable.addString("self")),
 				     n, a); :}
         ;
+
+/* this needs to be seperate because there is no way to pass back just a type id
+ and an expression */
+let_optional_init
+  /* no identifiers */
+  ::=
+      {: RESTULT = new no_expr(curr_lineno()); :}
+  ::= TYPEID:tid ASSIGN expr:e1
+      {: RESULT = new let() :}
 
 
 /* method formal parameters */
