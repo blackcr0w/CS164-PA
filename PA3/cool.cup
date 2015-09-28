@@ -144,8 +144,8 @@ class
 
 /* features include attributes and methods */
 optional_feature_list
-	::= /* empty */
-	    {: RESULT = new Features(curr_lineno()); :}
+  ::= /* empty */
+      {: RESULT = new Features(curr_lineno()); :}
   /* one feature */
   | feature: f SEMI
       {: RESULT = (new Features(curr_lineno())).appendElement(f); :}
@@ -169,11 +169,13 @@ feature
 
 /* Expressions */
 expr
-	::= LET OBJECTID:oid COLON TYPEID:tid IN expr:e
-	    {: RESULT = new let(curr_lineno(), id, tid, e); :}
-  | LET OBJECTID:oid COLON let_optional_init:loi IN expr:e2
-      {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
-  | expr:e1 PLUS expr:e2
+	::= LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
+	    {: RESULT = new let(curr_lineno(), id, tid, li ,e); :}
+        //| LET ONJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
+        //   {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+        //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 let_optional_init:loi IN expr:e2
+        //    {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
+        | expr:e1 PLUS expr:e2
 	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
@@ -210,18 +212,19 @@ expr
 
 /* this needs to be seperate because there is no way to pass back just a type id
  and an expression */
-let_optional_init
-  /* no identifiers */
+
+let_init
   ::=
-      {: RESTULT = new no_expr(curr_lineno()); :}
-  ::= TYPEID:tid ASSIGN expr:e1
-      {: RESULT = new let() :}
+      {: RESULT = new no_expr(curr_lineno()); :}
+  | ASSIGN expr:e
+      {: RESULT = new Expression(curr_lineno()).appendElement(e);  :}
+  ;
 
 
 /* method formal parameters */
 formal_list
   /* no parameters */
-  ::=w
+  ::=
       {: RESULT = new Formals(curr_lineno()); :}
   | formal:f
       {: RESULT = (new Formals(curr_lineno())).appendElement(f); :}
@@ -244,6 +247,8 @@ actuals
 	| LPAREN exp_list:el RPAREN
 	    {: RESULT = el; :}
 	;
+
+
 
 
 /* Non-empty list of expressions */
