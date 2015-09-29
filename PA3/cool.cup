@@ -170,9 +170,9 @@ feature
 /* Expressions */
 expr
 	::= LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
-	    {: RESULT = new let(curr_lineno(), id, tid, li ,e); :}
-        //| LET ONJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
-        //   {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+	        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
+        | LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
+          {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
         //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 let_optional_init:loi IN expr:e2
         //    {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
         | expr:e1 PLUS expr:e2
@@ -217,7 +217,7 @@ let_init
   ::=
       {: RESULT = new no_expr(curr_lineno()); :}
   | ASSIGN expr:e
-      {: RESULT = new Expression(curr_lineno()).appendElement(e);  :}
+      {: RESULT = e;  :}
   ;
 
 
