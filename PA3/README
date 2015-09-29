@@ -113,7 +113,7 @@ Instructions
 	% ant test
 
         To run ten examples in tests directory type:
-
+a
         % ant test-all
 
 	If you think your parser is correct and behaves like

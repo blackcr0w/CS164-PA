@@ -3,3 +3,6 @@ PA2/CoolLexer.java
 .cool*
 PA2/CoolLexer.java~
 tests/test6.cl
+*.zip
+discussion3-demo/
+*.gz
