@@ -83,7 +83,6 @@ nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
 nonterminal Expression let_init;
 nonterminal Expression let_body;
-nonterminal Expression if_body;
 
 
 /*
@@ -171,13 +170,13 @@ feature
 /* Expressions */
 expr
 	::= LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
-        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
-    | LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
-      {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
-    //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 let_optional_init:loi IN expr:e2
-    //    {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
+	        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
+        //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
+        //  {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+        | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
+            {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
 
-    | IF expr:e1 THEN if_body ELSE expr:e3 FI
+    | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
    		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
    		// jk: there is conflict here.
 
@@ -230,10 +229,14 @@ let_init
       {: RESULT = e;  :}
   ;
 
-if_body
-  ::=
-  	  {:  :}
-
+let_body
+  ::= IN expr:e
+      {: RESULT = e; :}
+  | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
+      {: RESULT = new let(curr_lineno(), oid, tid, li, e);  :}
+  | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
+      {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+  ;
 
 /* method formal parameters */
 formal_list
