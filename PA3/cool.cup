@@ -83,6 +83,7 @@ nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
 nonterminal Expression let_init;
 nonterminal Expression let_body;
+nonterminal Expression if_body;
 
 
 /*
@@ -170,13 +171,22 @@ feature
 /* Expressions */
 expr
 	::= LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
-	    {: RESULT = new let(curr_lineno(), id, tid, li ,e); :}
-        //| LET ONJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
-        //   {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
-        //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 let_optional_init:loi IN expr:e2
-        //    {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
-        | expr:e1 PLUS expr:e2
-	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
+        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
+    | LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
+      {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+    //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 let_optional_init:loi IN expr:e2
+    //    {: RESULT = new let(curr_lineno(), oid, tid, e2, e1) :}
+
+    | IF expr:e1 THEN if_body ELSE expr:e3 FI
+   		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
+   		// jk: there is conflict here.
+
+    | WHILE expr:e1 LOOP expr:e2 POOL 
+    	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
+
+    | expr:e1 PLUS expr:e2
+    	{: RESULT = new plus(curr_lineno(), e1, e2); :}	    	
+
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
 	| expr:e1 MULT expr:e2
@@ -217,8 +227,12 @@ let_init
   ::=
       {: RESULT = new no_expr(curr_lineno()); :}
   | ASSIGN expr:e
-      {: RESULT = (new Expressions(curr_lineno())).appendElement(e); :}
+      {: RESULT = e;  :}
   ;
+
+if_body
+  ::=
+  	  {:  :}
 
 
 /* method formal parameters */
