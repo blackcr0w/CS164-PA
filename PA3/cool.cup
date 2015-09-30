@@ -83,6 +83,7 @@ nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
 nonterminal Expression let_init;
 nonterminal Expression let_body;
+nonterminal Expressions exprs;
 
 
 /*
@@ -170,16 +171,16 @@ feature
 /* Expressions */
 expr
 	::= OBJECTID:oid ASSIGN expr:e
-            {: RESULT = new assign(curr_lineno(), oid, e); :}
-        | expr:e1 DOT OBJECTID:oid LPAREN RPAREN
-        | LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
-	        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
-        //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
-        //  {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
-        | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
-            {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
-        | expr:e1 PLUS expr:e2
-	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
+       {: RESULT = new assign(curr_lineno(), oid, e); :}
+    | expr:e1 DOT OBJECTID:oid LPAREN RPAREN
+
+    | LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
+       {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
+    //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
+    //  {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+    | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
+       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+        
 	    
     | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
 		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
@@ -187,6 +188,12 @@ expr
 
     | WHILE expr:e1 LOOP expr:e2 POOL 
     	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
+
+    | LBRACE exprs:es RBRACE
+   		{: RESULT = new block(curr_lineno(), es); :}
+ 
+	| expr:e1 PLUS expr:e2
+	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
 
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
@@ -259,6 +266,22 @@ formal
       {: RESULT = new formalc(curr_lineno(), oid, tid); :}
   ;
 
+
+exprs
+  ::= expr:e1 SEMI 
+      {: RESULT = (new Expressions(curr_lineno())).appendElement(e1); :}
+  | expr:e2 SEMI exprs:es  
+  	  {: RESULT = es.appendElement(e2); :}
+
+  ;
+/* expression list */
+// expr_list 
+//   ::= expr:e1
+//   	  {: RESULT = e1; :}
+//   |  expr_list:el
+//   	  {: RESULT = el; :}
+
+//   ;
 
 /* Method arguments */
 actuals
