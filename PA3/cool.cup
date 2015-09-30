@@ -84,6 +84,8 @@ nonterminal Expressions actuals, exp_list;
 nonterminal Expression let_init;
 nonterminal Expression let_body;
 nonterminal Expressions exprs;
+nonterminal Cases case_branch_list;
+nonterminal Case case_branch;
 
 
 /*
@@ -171,15 +173,15 @@ feature
 /* Expressions */
 expr
 	::= OBJECTID:oid ASSIGN expr:e
-       {: RESULT = new assign(curr_lineno(), oid, e); :}
-    | expr:e1 DOT OBJECTID:oid LPAREN RPAREN
-
-    | LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
-       {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
-    //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
-    //  {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
+        {: RESULT = new assign(curr_lineno(), oid, e); :}
     | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
-       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+        {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+    | CASE expr:e OF case_branch_list:cbl ESAC
+        {: RESULT = new typcase(curr_lineno(), e, cbl); :}
+    | NEW TYPEID:tid
+        {: RESULT = new new_(curr_lineno(), tid); :}
+    | ISVOID expr: e
+        {: RESULT = new isvoid(curr_lineno(), e); :}
         
 	    
     | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
@@ -221,14 +223,16 @@ expr
 	    {: RESULT = new bool_const(curr_lineno(), b); :}
 	| OBJECTID:o
 	    {: RESULT = new object(curr_lineno(), o); :}
-        | expr:e DOT OBJECTID:name actuals:a
-            {: RESULT = new dispatch(curr_lineno(), e, name, a);  :}
+    | expr:e DOT OBJECTID:name actuals:a
+        {: RESULT = new dispatch(curr_lineno(), e, name, a);  :}
+    | expr:e AT TYPEID:tid DOT OBJECTID:name actuals:a
+        {: RESULT = new static_dispatch(curr_lineno(), e, tid, name, a);  :}
 	| OBJECTID:n actuals:a
 	    {: RESULT = new dispatch(curr_lineno(),
 	                             new object(curr_lineno(),
 	                                        AbstractTable.idtable.addString("self")),
 				     n, a); :}
-        ;
+	;
 
 /* this needs to be seperate because there is no way to pass back just a type id
  and an expression */
@@ -265,6 +269,19 @@ formal
   ::= OBJECTID:oid COLON TYPEID:tid
       {: RESULT = new formalc(curr_lineno(), oid, tid); :}
   ;
+
+case_branch_list
+    ::= case_branch:cb
+      {: RESULT = (new Cases(curr_lineno())).appendElement(cb); :}
+    | case_branch_list:cbl case_branch:cb
+      {: RESULT = cbl.appendElement(cb);  :}
+    ;
+
+case_branch
+  ::= OBJECTID:oid COLON TYPEID:tid DARROW expr:e SEMI
+    {: RESULT = new branch(curr_lineno(), oid, tid, e); :}
+  ;
+
 
 
 exprs
