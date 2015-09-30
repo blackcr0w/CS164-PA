@@ -152,7 +152,7 @@ optional_feature_list
   /* multiple features */
   | optional_feature_list:ofl feature:f SEMI
       {: RESULT = ofl.appendElement(f); :}
-	;
+  ;
 
 /* a single feature */
 feature
@@ -169,22 +169,24 @@ feature
 
 /* Expressions */
 expr
-	::= LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
+	::= OBJECTID:oid ASSIGN expr:e
+            {: RESULT = new assign(curr_lineno(), oid, e); :}
+        | expr:e1 DOT OBJECTID:oid LPAREN RPAREN
+        | LET OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
 	        {: RESULT = new let(curr_lineno(), oid, tid, li ,e); :}
         //| LET OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e1 IN expr:e2
         //  {: RESULT = new let(curr_lineno(), oid, tid, e1, e2); :}
         | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
             {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
-
+        | expr:e1 PLUS expr:e2
+	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
+	    
     | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
-   		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
-   		// jk: there is conflict here.
+		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
+		// jk: there is conflict here.
 
     | WHILE expr:e1 LOOP expr:e2 POOL 
     	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
-
-    | expr:e1 PLUS expr:e2
-    	{: RESULT = new plus(curr_lineno(), e1, e2); :}	    	
 
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
@@ -212,6 +214,8 @@ expr
 	    {: RESULT = new bool_const(curr_lineno(), b); :}
 	| OBJECTID:o
 	    {: RESULT = new object(curr_lineno(), o); :}
+        | expr:e DOT OBJECTID:name actuals:a
+            {: RESULT = new dispatch(curr_lineno(), e, name, a);  :}
 	| OBJECTID:n actuals:a
 	    {: RESULT = new dispatch(curr_lineno(),
 	                             new object(curr_lineno(),
@@ -237,6 +241,7 @@ let_body
   | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
   ;
+
 
 /* method formal parameters */
 formal_list
