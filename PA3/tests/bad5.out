@@ -1,0 +1,24 @@
+#name "PA3/tests/bad5.test"
+#1 CLASS
+#1 OBJECTID a
+#1 '+'
+#1 OBJECTID b
+#1 '{'
+#2 OBJECTID emem
+#3 '}'
+#3 ';'
+#5 CLASS
+#5 OBJECTID c
+#5 '+'
+#5 OBJECTID d
+#5 '{'
+#6 CLASS
+#6 OBJECTID a
+#6 ':'
+#7 CLASS
+#7 OBJECTID b
+#7 '('
+#7 ')'
+#7 ';'
+#8 '}'
+#8 ';'

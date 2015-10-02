@@ -1,0 +1,45 @@
+#name "tests/bad1.test"
+#1 CLASS
+#1 TYPEID Test
+#1 '{'
+#2 OBJECTID test
+#2 '('
+#2 OBJECTID x
+#2 ':'
+#2 TYPEID Int
+#2 ')'
+#2 ':'
+#2 TYPEID String
+#2 '{'
+#2 OBJECTID x
+#2 '('
+#2 INT_CONST 5
+#2 ','
+#2 INT_CONST 4
+#2 ','
+#2 INT_CONST 3
+#2 ','
+#2 ')'
+#2 '}'
+#2 ';'
+#3 OBJECTID ok
+#3 '('
+#3 OBJECTID x
+#3 ':'
+#3 TYPEID Int
+#3 ')'
+#3 ':'
+#3 TYPEID String
+#3 '{'
+#3 OBJECTID x
+#3 '('
+#3 INT_CONST 5
+#3 ','
+#3 INT_CONST 4
+#3 ','
+#3 INT_CONST 3
+#3 ')'
+#3 '}'
+#3 ';'
+#4 '}'
+#4 ';'

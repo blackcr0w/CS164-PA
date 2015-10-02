@@ -1,0 +1,11 @@
+#name "tests/good1.cl"
+#1 CLASS
+#1 TYPEID Hello
+#1 '{'
+#2 '}'
+#2 ';'
+#4 CLASS
+#4 TYPEID Goodbye
+#4 '{'
+#5 '}'
+#5 ';'

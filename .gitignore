@@ -6,3 +6,5 @@ tests/test6.cl
 *.zip
 discussion3-demo/
 *.gz
+*.jar
+

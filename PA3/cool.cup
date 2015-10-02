@@ -129,7 +129,12 @@ class_list
 	/* several classes */
 	| class_list:cl class:c
 	    {: RESULT = cl.appendElement(c); :}
-	;
+  | class_list:cl error SEMI
+    {: RESULT = cl; :}
+  | error SEMI
+    {: RESULT = new Classes(curr_lineno()); :}
+  ;    
+	
 
 
 /* Class declarations
