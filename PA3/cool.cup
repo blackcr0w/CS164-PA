@@ -83,7 +83,7 @@ nonterminal Expression expr;
 nonterminal Expressions actuals, exp_list;
 nonterminal Expression let_init;
 nonterminal Expression let_body;
-nonterminal Expressions exprs;
+nonterminal Expressions expr_list;
 nonterminal Cases case_branch_list;
 nonterminal Case case_branch;
 
@@ -124,7 +124,7 @@ program
 
 class_list
 	/* single class */
-	::= class:c
+	::= class:c 
 	    {: RESULT = (new Classes(curr_lineno())).appendElement(c); :}
 	/* several classes */
 	| class_list:cl class:c
@@ -173,32 +173,34 @@ feature
   /* method feature */
   | OBJECTID:oid LPAREN formal_list:fl RPAREN COLON TYPEID:tid LBRACE expr:e RBRACE
       {: RESULT = new method(curr_lineno(), oid, fl, tid, e); :}
+       // jk: need to re-write
+  | error SEMI
   ;
 
 /* Expressions */
 expr
 	::= OBJECTID:oid ASSIGN expr:e
-        {: RESULT = new assign(curr_lineno(), oid, e); :}
-    | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
-        {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
-    | CASE expr:e OF case_branch_list:cbl ESAC
-        {: RESULT = new typcase(curr_lineno(), e, cbl); :}
-    | NEW TYPEID:tid
-        {: RESULT = new new_(curr_lineno(), tid); :}
-    | ISVOID expr: e
-        {: RESULT = new isvoid(curr_lineno(), e); :}
-        
-	    
-    | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
-		{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
-		// jk: there is conflict here.
+      {: RESULT = new assign(curr_lineno(), oid, e); :}
+  | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
+      {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+  | CASE expr:e OF case_branch_list:cbl ESAC
+      {: RESULT = new typcase(curr_lineno(), e, cbl); :}
+  | NEW TYPEID:tid
+      {: RESULT = new new_(curr_lineno(), tid); :}
+  | ISVOID expr: e
+      {: RESULT = new isvoid(curr_lineno(), e); :}
+      
+    
+  | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
+	{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
+	// jk: there is conflict here.
 
-    | WHILE expr:e1 LOOP expr:e2 POOL 
-    	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
+  | WHILE expr:e1 LOOP expr:e2 POOL 
+  	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
 
-    | LBRACE exprs:es RBRACE
-   		{: RESULT = new block(curr_lineno(), es); :}
- 
+  | LBRACE expr_list:es RBRACE
+ 		{: RESULT = new block(curr_lineno(), es); :}
+
 	| expr:e1 PLUS expr:e2
 	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
 
@@ -247,6 +249,10 @@ let_init
       {: RESULT = new no_expr(curr_lineno()); :}
   | ASSIGN expr:e
       {: RESULT = e;  :}
+
+      // jk: catch the error: ASSIGN symbol is not correct
+  | error expr:e
+     {: RESULT = e; :}
   ;
 
 let_body
@@ -256,6 +262,10 @@ let_body
       {: RESULT = new let(curr_lineno(), oid, tid, li, e);  :}
   | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+      // jk: catch the error: wrong syntax of let
+      // jk: need to re-write
+  | error COMMA let_body:lb
+    {: RESULT = lb; :}
   ;
 
 
@@ -289,11 +299,15 @@ case_branch
 
 
 
-exprs
+expr_list
   ::= expr:e1 SEMI 
       {: RESULT = (new Expressions(curr_lineno())).appendElement(e1); :}
-  | expr:e2 SEMI exprs:es  
+  | expr_list:es expr:e2 SEMI
   	  {: RESULT = es.appendElement(e2); :}
+  | expr_list:el error SEMI
+    {: RESULT = el; :}
+  | error SEMI 
+    {: RESULT = new Expressions(curr_lineno()); :}
 
   ;
 /* expression list */

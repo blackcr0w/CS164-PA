@@ -3,6 +3,7 @@ class Test {
   bar():Int {5};
 };
 
+(* error in wrong class definition *)
 class Test extends Object {
   foo:Test;
 };
@@ -12,6 +13,7 @@ class Test {
   bar():Int {5};
 };
 
+(* error in wrong class deifinition *)
 class Test implements Nothing{
   foo:Test;
   bar():Int {5};
