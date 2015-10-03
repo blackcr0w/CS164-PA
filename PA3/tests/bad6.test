@@ -1,0 +1,6 @@
+class Main inherits IO {
+    main() : SELF_TYPE {
+	(let c : Complex <- 3 + 4 in (1 + 2) + (5 + 6)
+	)
+    };
+};

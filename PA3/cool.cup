@@ -62,6 +62,7 @@ terminal LPAREN, RPAREN, AT, LBRACE, RBRACE;
 terminal AbstractSymbol STR_CONST, INT_CONST;
 terminal Boolean BOOL_CONST;
 terminal AbstractSymbol TYPEID, OBJECTID;
+terminal DR;
 
 /*  DON'T CHANGE ANYTHING ABOVE THIS LINE, OR YOUR PARSER WON'T WORK      */
 /**************************************************************************/
@@ -100,7 +101,7 @@ precedence left MULT, DIV;
 precedence left ISVOID;
 precedence left NEG;
 precedence left AT;
-precedence left DOT;
+precedence left DR;
 
 
 /***********************************************************************
@@ -181,8 +182,14 @@ feature
 expr
 	::= OBJECTID:oid ASSIGN expr:e
       {: RESULT = new assign(curr_lineno(), oid, e); :}
+
+  | IN expr:e
+            {: RESULT = e; :} 
+            %prec DR
+
   | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+
   | CASE expr:e OF case_branch_list:cbl ESAC
       {: RESULT = new typcase(curr_lineno(), e, cbl); :}
   | NEW TYPEID:tid
