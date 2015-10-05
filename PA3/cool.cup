@@ -117,7 +117,7 @@ precedence left DR;
 program
 	::= class_list:cl
 	    {: RESULT = new programc(curr_lineno(), cl); :}
-	| error
+	| error  // jk: 
 	    {: RESULT = new programc(curr_lineno(),
                                      new Classes(curr_lineno())); :}
         ;
@@ -130,7 +130,7 @@ class_list
 	/* several classes */
 	| class_list:cl class:c
 	    {: RESULT = cl.appendElement(c); :}
-  | class_list:cl error SEMI
+  | class_list:cl error SEMI  // terminated 
     {: RESULT = cl; :}
   | error SEMI
     {: RESULT = new Classes(curr_lineno()); :}
@@ -149,6 +149,8 @@ class
 				    f, curr_filename()); :}
 	| CLASS TYPEID:n INHERITS TYPEID:p LBRACE optional_feature_list:f RBRACE SEMI
 	    {: RESULT = new class_c(curr_lineno(), n, p, f, curr_filename()); :}
+
+  | error SEMI  // jk: Q, terminated properlly?
 	;
 
 /* features include attributes and methods */
@@ -161,6 +163,9 @@ optional_feature_list
   /* multiple features */
   | optional_feature_list:ofl feature:f SEMI
       {: RESULT = ofl.appendElement(f); :}
+  eooro SEMI
+  ofl error SEMI
+  
   ;
 
 /* a single feature */
@@ -273,6 +278,10 @@ let_body
       // jk: need to re-write
   | error COMMA let_body:lb
     {: RESULT = lb; :}
+
+  | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li error  // jk: catch let-in not binding error
+      {: RESULT = new let(curr_lineno(), oid, tid, li, );  :}
+
   ;
 
 
@@ -313,7 +322,7 @@ expr_list
   	  {: RESULT = es.appendElement(e2); :}
   | expr_list:el error SEMI
     {: RESULT = el; :}
-  | error SEMI 
+  | error SEMI // jk: Q 
     {: RESULT = new Expressions(curr_lineno()); :}
 
   ;

@@ -1,0 +1,82 @@
+(* error in let: shift-reduce conflict *)
+class Hello0 {
+	a : Int {
+		let x : Int <- 1 in 10 + 3
+	};
+};
+
+
+(* error in class definition: extends *)
+class Hello0 extends {
+	a : Int;
+};
+
+(* error in class definition: TYPE *)
+class 0 extends {
+	a : Int;
+};
+
+(* error in class definition: TYPE *)
+class Hello1 extends 0 {
+	a : Int;
+};
+
+(* correct class definition *)
+class Hello2 inherits Object{
+	a : Int;
+};
+
+
+(* error in feature: wrong going on to next feature *)
+class Hello2 inherits Object{
+	a : Bool true;
+	b : Int <- 1;
+	c : Int <- 2
+	d : String <- "Damine";
+};
+
+(* error in let: going on to next variable*)
+class Hello2 inherits Object{
+
+     foo(s : String) : Int {
+
+	 let bar1 : Int <- 1; bar2 : Int <- 2, bar3 : Int <- 3 in
+
+	 	let bar4 : Int = 4, bar5 : Int <- 5 in
+
+	 		let bar6 : Int <- s.length() in
+
+           		let bar7 : Int <- 0 in
+
+           			true
+     }
+
+};
+
+(* error in let: let-in binding *)
+class Hello2 inherits Object{
+
+     foo(s : String) : Int {
+     
+	 let bar1 : Int <- 0 in	
+           
+
+           let bar2 : Int <- s.length() in
+
+           	let bar3 : Int <- 0 in
+
+		  	
+	       
+	    
+        
+     }
+
+};
+
+
+
+
+
+
+
+
