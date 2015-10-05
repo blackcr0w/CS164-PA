@@ -1,6 +1,6 @@
 (* error in let: shift-reduce conflict *)
 class Hello0 {
-	a : Int {
+	a : Int <- {
 		let x : Int <- 1 in 10 + 3
 	};
 };
