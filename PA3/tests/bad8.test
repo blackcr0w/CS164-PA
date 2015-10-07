@@ -1,0 +1,19 @@
+(* error in let: let-in binding *)
+class Hello2 inherits Object{
+
+     foo(s : String) : Int {
+     
+	 let bar1 : Int <- 0 in	
+           
+
+           let bar2 : Int <- s.length() in
+
+           	let bar3 : Int <- 0 in
+
+		  	1
+	       
+	    
+        
+     };
+
+};

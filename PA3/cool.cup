@@ -102,6 +102,7 @@ precedence left ISVOID;
 precedence left NEG;
 precedence left AT;
 precedence left DR;
+precedence left DOT;
 
 
 /***********************************************************************
@@ -117,7 +118,7 @@ precedence left DR;
 program
 	::= class_list:cl
 	    {: RESULT = new programc(curr_lineno(), cl); :}
-	| error  // jk: 
+	| error  // jk: catch the error when the program did not start properly
 	    {: RESULT = new programc(curr_lineno(),
                                      new Classes(curr_lineno())); :}
         ;
@@ -130,8 +131,12 @@ class_list
 	/* several classes */
 	| class_list:cl class:c
 	    {: RESULT = cl.appendElement(c); :}
+  // jk: catch the error when there is redundant word after class list, 
+  // but class terminated properly
   | class_list:cl error SEMI  // terminated 
     {: RESULT = cl; :}
+
+  // catch the error when the class is only terminated well
   | error SEMI
     {: RESULT = new Classes(curr_lineno()); :}
   ;    
@@ -155,6 +160,11 @@ class
       {: RESULT = new class_c(curr_lineno(), n,
                         AbstractTable.idtable.addString("Object"),
             f, curr_filename()); :}
+      // TODO:
+  // | CLASS error LBRACE optional_feature_list:f RBRACE SEMI
+  //     {: RESULT = new class_c(curr_lineno(), n,
+  //                       AbstractTable.idtable.addString("Object"),
+  //           f, curr_filename()); :}
 	;
 
 /* features include attributes and methods */
@@ -162,30 +172,32 @@ optional_feature_list
   ::= /* empty */
       {: RESULT = new Features(curr_lineno()); :}
   /* one feature */
-  | feature: f SEMI
+  | feature: f
       {: RESULT = (new Features(curr_lineno())).appendElement(f); :}
   /* multiple features */
-  | optional_feature_list:ofl feature:f SEMI
+  | optional_feature_list:ofl feature:f 
       {: RESULT = ofl.appendElement(f); :}
+  // | error 
+  //   {: RESULT = new Features(curr_lineno()); :}
 
   /* jk: error in feature: wrong going on to next feature */
-  | optional_feature_list:ofl feature:f error
-      //{: RESULT = ofl.appendElement(f); :}
   /* jk: TODO: ofl error SEMI*/  
   ;
 
 /* a single feature */
 feature
   /* attribute feature */
-  ::= OBJECTID:oid COLON TYPEID:tid
+  ::= OBJECTID:oid COLON TYPEID:tid SEMI
       {: RESULT = new attr(curr_lineno(), oid, tid, new no_expr(curr_lineno())); :}
   /* attribute feature with assignment */
-  | OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e
+  | OBJECTID:oid COLON TYPEID:tid ASSIGN expr:e SEMI
       {: RESULT = new attr(curr_lineno(), oid, tid, e); :}
   /* method feature */
-  | OBJECTID:oid LPAREN formal_list:fl RPAREN COLON TYPEID:tid LBRACE expr:e RBRACE
+  | OBJECTID:oid LPAREN formal_list:fl RPAREN COLON TYPEID:tid LBRACE expr:e RBRACE SEMI
       {: RESULT = new method(curr_lineno(), oid, fl, tid, e); :}
        // jk: need to re-write
+  | OBJECTID:oid COLON error SEMI
+
   | error SEMI
   ;
 
@@ -194,12 +206,14 @@ expr
 	::= OBJECTID:oid ASSIGN expr:e
       {: RESULT = new assign(curr_lineno(), oid, e); :}
 
-  | IN expr:e
-            {: RESULT = e; :} 
-            %prec DR
 
   | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
       {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+
+  // jk: catch the error when the left of let expr is not matched
+  | IN expr:e
+      {: RESULT = e; :}
+      %prec DR    
 
   | CASE expr:e OF case_branch_list:cbl ESAC
       {: RESULT = new typcase(curr_lineno(), e, cbl); :}
@@ -257,6 +271,9 @@ expr
 	                             new object(curr_lineno(),
 	                                        AbstractTable.idtable.addString("self")),
 				     n, a); :}
+  // jk: catch the error when all kinds of expr is not matched
+  // | error
+  //   {: RESULT = new no_expr(curr_lineno()); :}
 	;
 
 /* this needs to be seperate because there is no way to pass back just a type id
@@ -268,7 +285,7 @@ let_init
   | ASSIGN expr:e
       {: RESULT = e;  :}
 
-      // jk: catch the error: ASSIGN symbol is not correct
+  // jk: catch the error: ASSIGN symbol is not correct
   | error expr:e
      {: RESULT = e; :}
   ;
@@ -276,6 +293,7 @@ let_init
 let_body
   ::= IN expr:e
       {: RESULT = e; :}
+    
   | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li IN expr:e
       {: RESULT = new let(curr_lineno(), oid, tid, li, e);  :}
   | COMMA OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
