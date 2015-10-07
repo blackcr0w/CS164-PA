@@ -1,8 +1,7 @@
 (* error in let: shift-reduce conflict *)
 class Hello0 {
-	a : Int <- {
-		let x : Int <- 1 in 10 + 3
-	};
+	foo:Int;
+  	bar():Object{ let x : Int <- 1 in 10 + 3 };
 };
 
 
