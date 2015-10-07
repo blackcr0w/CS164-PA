@@ -1,0 +1,209 @@
+#name "PA3/tests/bad7.test"
+#2 CLASS
+#2 TYPEID Hello0
+#2 '{'
+#3 OBJECTID foo
+#3 ':'
+#3 TYPEID Int
+#3 ';'
+#4 OBJECTID bar
+#4 '('
+#4 ')'
+#4 ':'
+#4 TYPEID Object
+#4 '{'
+#4 LET
+#4 OBJECTID x
+#4 ':'
+#4 TYPEID Int
+#4 ASSIGN
+#4 INT_CONST 1
+#4 IN
+#4 INT_CONST 10
+#4 '+'
+#4 INT_CONST 3
+#4 '}'
+#4 ';'
+#5 '}'
+#5 ';'
+#9 CLASS
+#9 TYPEID Hello0
+#9 OBJECTID extends
+#9 '{'
+#10 OBJECTID a
+#10 ':'
+#10 TYPEID Int
+#10 ';'
+#11 '}'
+#11 ';'
+#14 CLASS
+#14 INT_CONST 0
+#14 OBJECTID extends
+#14 '{'
+#15 OBJECTID a
+#15 ':'
+#15 TYPEID Int
+#15 ';'
+#16 '}'
+#16 ';'
+#19 CLASS
+#19 TYPEID Hello1
+#19 OBJECTID extends
+#19 INT_CONST 0
+#19 '{'
+#20 OBJECTID a
+#20 ':'
+#20 TYPEID Int
+#20 ';'
+#21 '}'
+#21 ';'
+#24 CLASS
+#24 TYPEID Hello2
+#24 INHERITS
+#24 TYPEID Object
+#24 '{'
+#25 OBJECTID a
+#25 ':'
+#25 TYPEID Int
+#25 ';'
+#26 '}'
+#26 ';'
+#30 CLASS
+#30 TYPEID Hello2
+#30 INHERITS
+#30 TYPEID Object
+#30 '{'
+#31 OBJECTID a
+#31 ':'
+#31 TYPEID Bool
+#31 BOOL_CONST true
+#31 ';'
+#32 OBJECTID b
+#32 ':'
+#32 TYPEID Int
+#32 ASSIGN
+#32 INT_CONST 1
+#32 ';'
+#33 OBJECTID c
+#33 ':'
+#33 TYPEID Int
+#33 ASSIGN
+#33 INT_CONST 2
+#34 OBJECTID d
+#34 ':'
+#34 TYPEID String
+#34 ASSIGN
+#34 STR_CONST "Damine"
+#34 ';'
+#35 '}'
+#35 ';'
+#38 CLASS
+#38 TYPEID Hello2
+#38 INHERITS
+#38 TYPEID Object
+#38 '{'
+#40 OBJECTID foo
+#40 '('
+#40 OBJECTID s
+#40 ':'
+#40 TYPEID String
+#40 ')'
+#40 ':'
+#40 TYPEID Int
+#40 '{'
+#42 LET
+#42 OBJECTID bar1
+#42 ':'
+#42 TYPEID Int
+#42 ASSIGN
+#42 INT_CONST 1
+#42 ';'
+#42 OBJECTID bar2
+#42 ':'
+#42 TYPEID Int
+#42 ASSIGN
+#42 INT_CONST 2
+#42 ','
+#42 OBJECTID bar3
+#42 ':'
+#42 TYPEID Int
+#42 ASSIGN
+#42 INT_CONST 3
+#42 IN
+#44 LET
+#44 OBJECTID bar4
+#44 ':'
+#44 TYPEID Int
+#44 '='
+#44 INT_CONST 4
+#44 ','
+#44 OBJECTID bar5
+#44 ':'
+#44 TYPEID Int
+#44 ASSIGN
+#44 INT_CONST 5
+#44 IN
+#46 LET
+#46 OBJECTID bar6
+#46 ':'
+#46 TYPEID Int
+#46 ASSIGN
+#46 OBJECTID s
+#46 '.'
+#46 OBJECTID length
+#46 '('
+#46 ')'
+#46 IN
+#48 LET
+#48 OBJECTID bar7
+#48 ':'
+#48 TYPEID Int
+#48 ASSIGN
+#48 INT_CONST 0
+#48 IN
+#50 BOOL_CONST true
+#51 '}'
+#53 '}'
+#53 ';'
+#56 CLASS
+#56 TYPEID Hello2
+#56 INHERITS
+#56 TYPEID Object
+#56 '{'
+#58 OBJECTID foo
+#58 '('
+#58 OBJECTID s
+#58 ':'
+#58 TYPEID String
+#58 ')'
+#58 ':'
+#58 TYPEID Int
+#58 '{'
+#60 LET
+#60 OBJECTID bar1
+#60 ':'
+#60 TYPEID Int
+#60 ASSIGN
+#60 INT_CONST 0
+#60 IN
+#63 LET
+#63 OBJECTID bar2
+#63 ':'
+#63 TYPEID Int
+#63 ASSIGN
+#63 OBJECTID s
+#63 '.'
+#63 OBJECTID length
+#63 '('
+#63 ')'
+#63 IN
+#65 LET
+#65 OBJECTID bar3
+#65 ':'
+#65 TYPEID Int
+#65 ASSIGN
+#65 INT_CONST 0
+#65 IN
+#71 '}'
+#73 '}'
+#73 ';'
