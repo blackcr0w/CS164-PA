@@ -118,7 +118,7 @@ precedence left DOT;
 program
 	::= class_list:cl
 	    {: RESULT = new programc(curr_lineno(), cl); :}
-	| error  // jk: catch the error when the program did not start properly
+	| error  /* catch the error when the program did not start properly */
 	    {: RESULT = new programc(curr_lineno(),
                                      new Classes(curr_lineno())); :}
         ;
@@ -131,15 +131,13 @@ class_list
 	/* several classes */
 	| class_list:cl class:c
 	    {: RESULT = cl.appendElement(c); :}
-  // jk: catch the error when there is redundant word after class list, 
-  // but class terminated properly
-  | class_list:cl error SEMI  // terminated 
-    {: RESULT = cl; :}
-
-  // catch the error when the class is only terminated well
-  | error SEMI
-    {: RESULT = new Classes(curr_lineno()); :}
-  ;    
+        /* catch the error when there is redundant word after class list  */
+        | class_list:cl error SEMI   
+            {: RESULT = cl; :}
+        /* catch the error when the class has an error but is terminated well */
+        | error SEMI
+            {: RESULT = new Classes(curr_lineno()); :}
+        ;    
 	
 
 
@@ -154,22 +152,16 @@ class
 				    f, curr_filename()); :}
 	| CLASS TYPEID:n INHERITS TYPEID:p LBRACE optional_feature_list:f RBRACE SEMI
 	    {: RESULT = new class_c(curr_lineno(), n, p, f, curr_filename()); :}
-
-  | CLASS TYPEID:n LBRACE optional_feature_list:f error SEMI  
-  // jk: Q, terminated properlly? TODO: handle this part
-      {: RESULT = new class_c(curr_lineno(), n,
+        /* handle class error */
+        | CLASS TYPEID:n LBRACE optional_feature_list:f error SEMI  
+            {: RESULT = new class_c(curr_lineno(), n,
                         AbstractTable.idtable.addString("Object"),
-            f, curr_filename()); :}
-      // TODO:
-  // | CLASS error LBRACE optional_feature_list:f RBRACE SEMI
-  //     {: RESULT = new class_c(curr_lineno(), n,
-  //                       AbstractTable.idtable.addString("Object"),
-  //           f, curr_filename()); :}
+                        f, curr_filename()); :}
 	;
 
 /* features include attributes and methods */
 optional_feature_list
-  ::= /* empty */
+  ::= /* empty - no features */
       {: RESULT = new Features(curr_lineno()); :}
   /* one feature */
   | feature: f
@@ -177,11 +169,6 @@ optional_feature_list
   /* multiple features */
   | optional_feature_list:ofl feature:f 
       {: RESULT = ofl.appendElement(f); :}
-  // | error 
-  //   {: RESULT = new Features(curr_lineno()); :}
-
-  /* jk: error in feature: wrong going on to next feature */
-  /* jk: TODO: ofl error SEMI*/  
   ;
 
 /* a single feature */
@@ -195,47 +182,35 @@ feature
   /* method feature */
   | OBJECTID:oid LPAREN formal_list:fl RPAREN COLON TYPEID:tid LBRACE expr:e RBRACE SEMI
       {: RESULT = new method(curr_lineno(), oid, fl, tid, e); :}
-       // jk: need to re-write
+       /* catch errors in features */
   | OBJECTID:oid COLON error SEMI
-
   | error SEMI
   ;
 
 /* Expressions */
 expr
 	::= OBJECTID:oid ASSIGN expr:e
-      {: RESULT = new assign(curr_lineno(), oid, e); :}
-
-
-  | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
-      {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
-
-  // jk: catch the error when the left of let expr is not matched
-  | IN expr:e
-      {: RESULT = e; :}
-      %prec DR    
-
-  | CASE expr:e OF case_branch_list:cbl ESAC
-      {: RESULT = new typcase(curr_lineno(), e, cbl); :}
-  | NEW TYPEID:tid
-      {: RESULT = new new_(curr_lineno(), tid); :}
-  | ISVOID expr: e
-      {: RESULT = new isvoid(curr_lineno(), e); :}
-      
-    
-  | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
-	{: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
-	// jk: there is conflict here.
-
-  | WHILE expr:e1 LOOP expr:e2 POOL 
-  	{: RESULT = new  loop(curr_lineno(), e1, e2); :}
-
-  | LBRACE expr_list:es RBRACE
- 		{: RESULT = new block(curr_lineno(), es); :}
-
+            {: RESULT = new assign(curr_lineno(), oid, e); :}
+        | LET OBJECTID:oid COLON TYPEID:tid let_init:li let_body:lb
+            {: RESULT = new let(curr_lineno(), oid, tid, li, lb); :}
+         // jk: catch the error when the left of let expr is not matched
+        | IN expr:e
+            {: RESULT = e; :}
+            %prec DR    
+        | CASE expr:e OF case_branch_list:cbl ESAC
+            {: RESULT = new typcase(curr_lineno(), e, cbl); :}
+        | NEW TYPEID:tid
+            {: RESULT = new new_(curr_lineno(), tid); :}
+        | ISVOID expr: e
+            {: RESULT = new isvoid(curr_lineno(), e); :}
+        | IF expr:e1 THEN expr:e2 ELSE expr:e3 FI
+	    {: RESULT = new cond(curr_lineno(), e1, e2, e3); :}
+        | WHILE expr:e1 LOOP expr:e2 POOL 
+            {: RESULT = new  loop(curr_lineno(), e1, e2); :}
+        | LBRACE expr_list:es RBRACE
+            {: RESULT = new block(curr_lineno(), es); :}
 	| expr:e1 PLUS expr:e2
 	    {: RESULT = new plus(curr_lineno(), e1, e2); :}
-
 	| expr:e1 MINUS expr:e2
 	    {: RESULT = new sub(curr_lineno(), e1, e2); :}
 	| expr:e1 MULT expr:e2
@@ -262,22 +237,16 @@ expr
 	    {: RESULT = new bool_const(curr_lineno(), b); :}
 	| OBJECTID:o
 	    {: RESULT = new object(curr_lineno(), o); :}
-    | expr:e DOT OBJECTID:name actuals:a
-        {: RESULT = new dispatch(curr_lineno(), e, name, a);  :}
-    | expr:e AT TYPEID:tid DOT OBJECTID:name actuals:a
-        {: RESULT = new static_dispatch(curr_lineno(), e, tid, name, a);  :}
+        | expr:e DOT OBJECTID:name actuals:a
+            {: RESULT = new dispatch(curr_lineno(), e, name, a);  :}
+        | expr:e AT TYPEID:tid DOT OBJECTID:name actuals:a
+            {: RESULT = new static_dispatch(curr_lineno(), e, tid, name, a);  :}
 	| OBJECTID:n actuals:a
 	    {: RESULT = new dispatch(curr_lineno(),
 	                             new object(curr_lineno(),
 	                                        AbstractTable.idtable.addString("self")),
 				     n, a); :}
-  // jk: catch the error when all kinds of expr is not matched
-  // | error
-  //   {: RESULT = new no_expr(curr_lineno()); :}
 	;
-
-/* this needs to be seperate because there is no way to pass back just a type id
- and an expression */
 
 let_init
   ::=
@@ -302,10 +271,6 @@ let_body
       // jk: need to re-write
   | error COMMA let_body:lb
     {: RESULT = lb; :}
-
-  //| COMMA OBJECTID:oid COLON TYPEID:tid let_init:li error  // jk: catch let-in not binding error
-    //  {: RESULT = new let(curr_lineno(), oid, tid, li, );  :}
-
   ;
 
 
@@ -350,15 +315,6 @@ expr_list
     {: RESULT = new Expressions(curr_lineno()); :}
 
   ;
-/* expression list */
-// expr_list 
-//   ::= expr:e1
-//   	  {: RESULT = e1; :}
-//   |  expr_list:el
-//   	  {: RESULT = el; :}
-
-//   ;
-
 /* Method arguments */
 actuals
         /* No arguments */
@@ -368,9 +324,6 @@ actuals
 	| LPAREN exp_list:el RPAREN
 	    {: RESULT = el; :}
 	;
-
-
-
 
 /* Non-empty list of expressions */
 exp_list
