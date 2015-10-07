@@ -155,3 +155,49 @@ a
 
 Write-up for PA3J
 -----------------
+						+--------------------------+
+						| CS 164                   |
+						| Project 3: Parser        |
+						| Design Document          |
+						+--------------------------+
+
+					Damien Mendoza-Row	<damien.nrow@berkeley.edu>
+					Mingjie Zhao		<jackzhao@berkeley.edu>
+
+1. ---Grammar---
+	feature:  we split feature into two non-terminal to handle single features and lists of features. “optional_feature_list” has three cases: no features (return an empty Feature list), one feature, and multiple features. multiple features works by having a recursive definition. features themselves are translated directly from the grammar and have three types: attribute without assignment, attribute with assignment, and methods. Method formals were handled the same way as the feature list, with a recursive definition of one non-terminal for the list of formals (formal_list) and another non-terminal to define the actual formals (formal).
+	expressions: we added all missing expressions. Most of them are directly translated from the cool manual to cup (dispatch, conditionals, new, ID). 
+
+	let:  The only tricky expressions were case and let because of the unbounded number of statements that can be inside them (DARROW for case and assignment expressions in let). case was handled similarly to features (by using a recursive definition of non-terminals called case_branch_list and case_branch). let was handled with a recursive let node. By using this recursive call of let expressions there are no ambiguities in the let grammar and and it was not necessary to use the cup precedence function for the let production.
+	Precedence for operators was meticulously copied from the cool manual to ensure correctness. 
+
+	if-then-else-fi:  In the lecture, the professor talked about the shift-reduce in "if-then-else"
+	expression. We argue that this will not happen in COOL. Since shift-reduce conflict happens when there is nested, recursive if-then expression, the parser do not know which “if” binds to which “else”. But in COOL, since we have “fi” at the end, which restricts the if-else binding to only one case, that “else” always binds to the nearest “if”. So we do not bother to handle the shift reduce conflict here.
+
+
+2. ---Error Handling---
+	In this part, we try to catch and recover from these kind of errors.
+
+	(1)Single errors:
+	error in let: shift-reduce conflict
+	error in let: let-in nested binding problem
+	error in let: going on to next variable, but next variable is terminated correctly
+	error in class definition: wrong symbol in definition, but next class is terminated correctly
+	error in class definition: wrong symbol in TYPE
+	error in class definition: wrong symbol in OBJECTID
+	error in feature: wrong going on to next feature, but next feature is terminated correctly
+
+
+	(2) Multiple errors coming together
+	multiple class test and multiple features
+	method feature with no formals test
+	nested expressions tests
+	      
+
+3. ---Tests---
+	Good Tests: the tests are in good.cl, we wrote a line for every type of grammar in the cool manual, including multiple statements for productions that had optional parts (e.g. methods with no formals).
+
+	Bad Tests: All the tests are in bad.cl, in which we covers all the error cases described in 
+	"error handling" section.
+
+	We also tested the Parser, compared it with the reference implementation, and compiled and ran the stack machine with this parser.
