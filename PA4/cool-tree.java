@@ -154,6 +154,7 @@ abstract class Expression extends TreeNode {
             { out.println(Utilities.pad(n) + ": " + type.getString()); }
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
+        // jk: no_type is used in evaluating type of expressions
     }
 
 }
@@ -243,9 +244,7 @@ class programc extends Program {
     public void dump(PrintStream out, int n) {
         out.print(Utilities.pad(n) + "programc\n");
         classes.dump(out, n+2);
-    }
-
-    
+    }    
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_program");
@@ -278,6 +277,8 @@ class programc extends Program {
 	    System.err.println("Compilation halted due to static semantic errors.");
 	    System.exit(1);
 	}
+    classTable.installBasicClasses();
+
     }
 
 }

@@ -32,12 +32,13 @@ class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
 
+
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
      * do anything useful; you will need to edit it to make if do what
      * you want.
      * */
-    private void installBasicClasses() {
+    public void installBasicClasses() {
 	AbstractSymbol filename 
 	    = AbstractTable.stringtable.addString("<basic class>");
 	
@@ -120,12 +121,8 @@ class ClassTable {
 	// The Int class has no methods and only a single attribute, the
 	// "val" for the integer.
 
-	class_c Int_class = 
-	    new class_c(0,
-		       TreeConstants.Int,
-		       TreeConstants.Object_,
-		       new Features(0)
-			   .appendElement(new attr(0,
+	class_c Int_class = new class_c(0, TreeConstants.Int, TreeConstants.Object_, 
+		new Features(0).appendElement(new attr(0,
 					    TreeConstants.val,
 					    TreeConstants.prim_slot,
 					    new no_expr(0))),
@@ -193,8 +190,8 @@ class ClassTable {
            Bool_class, and Str_class here */
 
 	// NOT TO BE INCLUDED IN SKELETON
-	
-	Object_class.dump_with_types(System.err, 0);
+	// jk: dont know what to do here
+	Object_class.dump_with_types(System.err, 0); 
 	IO_class.dump_with_types(System.err, 0);
 	Int_class.dump_with_types(System.err, 0);
 	Bool_class.dump_with_types(System.err, 0);
@@ -204,10 +201,14 @@ class ClassTable {
 
 
     public ClassTable(Classes cls) {
-	semantErrors = 0;
-	errorStream = System.err;
+    	semantErrors = 0;
+		errorStream = System.err;
+		/* fill this in */
+		for (Enumeration e = cls.getElements(); e.hasMoreElements(); ) {
+		Object n = e.nextElement();
+		... do something with n ...
+		}
 	
-	/* fill this in */
     }
 
     /** Prints line number and file name of the given class.
@@ -220,7 +221,7 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(class_c c) {
-	return semantError(c.getFilename(), c);
+		return semantError(c.getFilename(), c);
     }
 
     /** Prints the file name and the line number of the given tree node.
@@ -234,8 +235,8 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(AbstractSymbol filename, TreeNode t) {
-	errorStream.print(filename + ":" + t.getLineNumber() + ": ");
-	return semantError();
+		errorStream.print(filename + ":" + t.getLineNumber() + ": ");
+		return semantError();
     }
 
     /** Increments semantic error count and returns the print stream for
@@ -246,18 +247,18 @@ class ClassTable {
      *
      * */
     public PrintStream semantError() {
-	semantErrors++;
-	return errorStream;
+		semantErrors++;
+		return errorStream;
     }
 
     /** Returns true if there are any static semantic errors. */
     public boolean errors() {
-	return semantErrors != 0;
+		return semantErrors != 0;
     }
 
     // NOT TO BE INCLUDED IN SKELETON
     public static void main(String[] args) {
-	new ClassTable(null).installBasicClasses();
+		new ClassTable(null).installBasicClasses();
     }
 }
 			  
