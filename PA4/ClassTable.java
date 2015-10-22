@@ -22,7 +22,6 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 // This is a project skeleton file
 
 import java.io.PrintStream;
-import java.io.*;
 import java.util.*;
 
 /** This class may be used to contain the semantic information such as
@@ -32,13 +31,16 @@ class ClassTable {
     private int semantErrors;
     private PrintStream errorStream;
 
+    private Hashtable<String, ArrayList<String>> classGraph;
+    private Hashtable<String, class_c> nameToNodeMap; // needed for error reporting
+    private HashSet<String> primitiveClasses; // save non inheritable classes
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
      * do anything useful; you will need to edit it to make if do what
      * you want.
      * */
-    public void installBasicClasses() {
+    private void installBasicClasses() {
 	AbstractSymbol filename 
 	    = AbstractTable.stringtable.addString("<basic class>");
 	
@@ -107,10 +109,10 @@ class ClassTable {
 					      TreeConstants.SELF_TYPE,
 					      new no_expr(0)))
 			   .appendElement(new method(0,
-					      TreeConstants.in_string,
-					      new Formals(0),
-					      TreeConstants.Str,
-					      new no_expr(0)))
+                       TreeConstants.in_string,
+                       new Formals(0),
+                       TreeConstants.Str,
+                       new no_expr(0)))
 			   .appendElement(new method(0,
 					      TreeConstants.in_int,
 					      new Formals(0),
@@ -121,8 +123,12 @@ class ClassTable {
 	// The Int class has no methods and only a single attribute, the
 	// "val" for the integer.
 
-	class_c Int_class = new class_c(0, TreeConstants.Int, TreeConstants.Object_, 
-		new Features(0).appendElement(new attr(0,
+	class_c Int_class = 
+	    new class_c(0,
+		       TreeConstants.Int,
+		       TreeConstants.Object_,
+		       new Features(0)
+			   .appendElement(new attr(0,
 					    TreeConstants.val,
 					    TreeConstants.prim_slot,
 					    new no_expr(0))),
@@ -186,29 +192,166 @@ class ClassTable {
 					      new no_expr(0))),
 		       filename);
 
-	/* Do somethind with Object_class, IO_class, Int_class,
+	/* Do something with Object_class, IO_class, Int_class,
            Bool_class, and Str_class here */
+    String objectName = Object_class.getName().getString();
+    classGraph.put(objectName, new ArrayList());
+    // object has no parent
+    nameToNodeMap.put(objectName, Object_class);
 
-	// NOT TO BE INCLUDED IN SKELETON
-	// jk: dont know what to do here
-	Object_class.dump_with_types(System.err, 0); 
-	IO_class.dump_with_types(System.err, 0);
-	Int_class.dump_with_types(System.err, 0);
-	Bool_class.dump_with_types(System.err, 0);
-	Str_class.dump_with_types(System.err, 0);
+    String ioName = IO_class.getName().getString();
+    classGraph.put(ioName, new ArrayList());
+    classGraph.get(objectName).add(ioName);
+    nameToNodeMap.put(ioName, Object_class);
+
+    String intName = Int_class.getName().getString();
+    classGraph.put(intName, new ArrayList());
+    classGraph.get(objectName).add(intName);
+    nameToNodeMap.put(intName, Object_class);
+
+    String boolName = Bool_class.getName().getString();
+    classGraph.put(boolName, new ArrayList());
+    classGraph.get(objectName).add(boolName);
+    nameToNodeMap.put(boolName, Object_class);
+
+    String strName = Str_class.getName().getString();
+    classGraph.put(strName, new ArrayList());
+    classGraph.get(objectName).add(strName);
+    nameToNodeMap.put(strName, Object_class);
+
+    //primitiveClasses.add(objectName);
+    primitiveClasses.add(ioName);
+    primitiveClasses.add(intName);
+    primitiveClasses.add(boolName);
+    primitiveClasses.add(strName);
+
+    // NOT TO BE INCLUDED IN SKELETON
+	
+//	Object_class.dump_with_types(System.err, 0);
+//	IO_class.dump_with_types(System.err, 0);
+//	Int_class.dump_with_types(System.err, 0);
+//	Bool_class.dump_with_types(System.err, 0);
+//	Str_class.dump_with_types(System.err, 0);
     }
 	
 
-
+    /** Add the provided classes to the class graph
+     *
+     * Expects the passes in classes to be an enumeration
+     *
+     * */
     public ClassTable(Classes cls) {
-    	semantErrors = 0;
-		errorStream = System.err;
-		/* fill this in */
-		for (Enumeration e = cls.getElements(); e.hasMoreElements(); ) {
-		Object n = e.nextElement();
-		... do something with n ...
-		}
+	semantErrors = 0;
+	errorStream = System.err;
 	
+	/* fill this in */
+    classGraph = new Hashtable<String, ArrayList<String>>();
+    nameToNodeMap = new Hashtable<String, class_c>();
+    primitiveClasses = new HashSet<String>();
+
+    installBasicClasses();
+
+    /* required because classes do not need to be declared in order */
+    LinkedList<class_c> noParent = new LinkedList();
+
+    for (Enumeration<TreeNode> e = cls.getElements(); e.hasMoreElements();){
+        class_c curClass = (class_c)e.nextElement();
+        String curName = curClass.getName().getString();
+        String parName = curClass.getParent().getString();
+
+        if(primitiveClasses.contains(parName)){
+            String errorStr = "\n\tCannot inherit from primitive class \"" + parName + "\".\n";
+            semantError(curClass).append(errorStr).flush();
+            System.exit(0);
+        }
+
+        if (!classGraph.containsKey(curName)){
+            if (classGraph.containsKey(parName)){
+                classGraph.put(curName, new ArrayList<String>());
+                classGraph.get(parName).add(curName);
+                nameToNodeMap.put(curName, curClass);
+            }else{
+                noParent.offer(curClass);
+            }
+        }else{
+            String errorStr = "\n\tDuplicate class name found. \"" + curName + "\"\n";
+            semantError(curClass).append(errorStr).flush();
+            System.exit(0);
+        }
+    }
+
+    /* clean up classes declared out of order.
+     *
+     *  Loop through a queue looking for classes with its parent already in the table.
+     *  if such a class is found, then remove it from the queue and add to table
+     *  else add back to the queue
+     *
+     *  if the entire queue is traversed without removing anything then there is a class
+     *  without an invalid parent
+     */
+    boolean didChange = true;
+    while(noParent.size ()!= 0 && didChange){
+        didChange = false;
+        int oldSize = noParent.size();
+        for (int i = 0; i < oldSize; i++){
+            class_c curClass = noParent.remove();
+            String curName = curClass.getName().getString();
+            String parName = curClass.getParent().getString();
+
+            if (!classGraph.containsKey(curName)){
+                if (classGraph.containsKey(parName)){
+                    classGraph.put(curName, new ArrayList<String>());
+                    classGraph.get(parName).add(curName);
+                    nameToNodeMap.put(curName, curClass);
+                    didChange = true;
+                }else{
+                    noParent.offer(curClass);
+            }
+        }else{
+            String errorStr = "\n\tDuplicate class name found. \"" + curName + "\"\n";
+            semantError(curClass).append(errorStr).flush();
+            System.exit(0);
+        }
+    }
+    }
+
+    /* there are classes with no parent
+        all classes in noParent don't have valid parents,
+        but we only report the first ('cause we're lazy) */
+    if(noParent.size() != 0){
+        // report some error, class with no parent
+        class_c curClass = noParent.remove();
+        String parName = curClass.getParent().getString();
+        String errorStr = "\n\tNo parent class \"" + parName + "\" was found.\n";
+        semantError(curClass).append(errorStr).flush();
+        System.exit(0);
+    }
+
+
+
+    checkClassHierarchy();
+    }
+
+    /** Check or valid class hierarchy
+     *
+     * prints some error messages and ends execution if there is a cycle in the graph.
+     *
+     * @param ct the class table
+     */
+    public void checkClassHierarchy(){
+        HashSet<String> marked = new HashSet();
+
+        Set<String> keys = classGraph.keySet();
+        for(String key: keys){
+            if(marked.contains(key)){
+                class_c curClass = nameToNodeMap.get(key);
+                String errorStr = "\n\tCircular class hierarchy found with \"" + key + "\"\n";
+                semantError(curClass).append(errorStr).flush();
+                System.exit(0);
+            }else{
+                marked.add(key);
+            }
+        }
     }
 
     /** Prints line number and file name of the given class.
@@ -221,7 +364,7 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(class_c c) {
-		return semantError(c.getFilename(), c);
+	return semantError(c.getFilename(), c);
     }
 
     /** Prints the file name and the line number of the given tree node.
@@ -235,8 +378,8 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(AbstractSymbol filename, TreeNode t) {
-		errorStream.print(filename + ":" + t.getLineNumber() + ": ");
-		return semantError();
+	errorStream.print(filename + ":" + t.getLineNumber() + ": ");
+	return semantError();
     }
 
     /** Increments semantic error count and returns the print stream for
@@ -247,19 +390,29 @@ class ClassTable {
      *
      * */
     public PrintStream semantError() {
-		semantErrors++;
-		return errorStream;
+	semantErrors++;
+	return errorStream;
     }
 
     /** Returns true if there are any static semantic errors. */
     public boolean errors() {
-		return semantErrors != 0;
+	return semantErrors != 0;
     }
 
     // NOT TO BE INCLUDED IN SKELETON
     public static void main(String[] args) {
-		new ClassTable(null).installBasicClasses();
+	new ClassTable(null).installBasicClasses();
     }
+
+    public String toString(){
+        String s = "classGraph size: " + classGraph.size() + "\n";
+        int indent = 0;
+        Set<String> keys = classGraph.keySet();
+        for(String key: keys){
+            s += "\t" + key + ": " + classGraph.get(key).toString() + "\n";
+        }
+        return s;
+    }
+
 }
 			  
-    

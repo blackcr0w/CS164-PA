@@ -10,3 +10,6 @@ discussion3-demo/
 
 # ignore the output file for testing
 *.out
+./PA4/!.cool-tree.java
+./PA4/!.ClassTable.java
+./PA4/!.tests/*

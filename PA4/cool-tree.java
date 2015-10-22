@@ -272,12 +272,26 @@ class programc extends Program {
 	ClassTable classTable = new ClassTable(classes);
 	
 	/* some semantic analysis code may go here */
+    System.out.println(classTable.toString());
 
 	if (classTable.errors()) {
 	    System.err.println("Compilation halted due to static semantic errors.");
 	    System.exit(1);
 	}
-    classTable.installBasicClasses();
+
+    SymbolTable classScope = new SymbolTable();
+    classScope.classTable = classTable;
+    // jk: iterate throught the classTable to <==> traverse the AST
+    // for each class, traverse the AST, gather all declaration in the SymbolTable
+    // want to get the O, M, C of this class, put them into one scope
+    // every class is a new scope
+    for (Map.Entry<String, ArrayList<String>> currClass : classScope.classTable.entrySet()) {
+        System.out.println("Key : " + currClass.getKey() + " Value : " + currClass.getValue());
+        classScope.enterScope();
+        AbstractSymbol fred = AbstractTable.stringtable.addString("Fred");
+        map.addId(fred, new Integer(22));
+    }
+
 
     }
 
