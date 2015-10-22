@@ -33,7 +33,7 @@ class ClassTable {
 
     private Hashtable<String, ArrayList<String>> classGraph;
     private Hashtable<String, class_c> nameToNodeMap; // needed for error reporting
-    private HashSet<String> primitiveClasses;
+    private HashSet<String> primitiveClasses; // save non inheritable classes
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
