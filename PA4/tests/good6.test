@@ -1,0 +1,10 @@
+class A inherits B {
+};
+
+class B inherits A {
+};
+
+class C inherits String {	
+};
+
+class Main { main () : Int { 9 }; };

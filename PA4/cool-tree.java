@@ -11,7 +11,8 @@
 import java.util.Enumeration;
 import java.io.PrintStream;
 import java.util.Vector;
-
+import java.io.*;
+import java.util.*;
 
 /** Defines simple phylum Program */
 abstract class Program extends TreeNode {
