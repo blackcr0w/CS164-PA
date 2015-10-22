@@ -1,0 +1,20 @@
+Questions on PA1
+----------------
+
+1. Describe your implementation of the stack machine in a single short
+   paragraph.
+
+
+There are 2 main classes, List and Stack. The list is a singly-linked list that is used as a stack. It is only capable of storing strings. The other main clas, Stack, has the methods push() and pop() to simplify the stack machine operations. Stack has a subclass SE that has a method command() for handling the stack machine '+' command and some extra instance varables for manipulating data. The main loop is in the Main class.
+
+
+2. List 3 things that you like about the Cool programming language.
+   (1) it is clean
+   (2) it has polymorphism
+   (3) the name
+
+3. List 3 things you DON'T like about Cool.
+   (1) no local variables (sort of -- let statement)
+   (2) the conditional structure seems combersome (why the extra "then"?).
+   (3) the name
+

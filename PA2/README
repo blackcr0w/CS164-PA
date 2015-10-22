@@ -1,0 +1,39 @@
+Damien Mendoza-Row
+24335219
+
+Write-up for PA2J
+-----------------
+
+The regex specification for jflex is split into 11 parts: whitespace, line comments
+block comments, string, multi-character operators, integers, keywords, typeids,
+object ids, single character ids, and unmatched characters.
+
+whitespace, multi-character operators, integers, keywords, type ids, object ids,
+single character ids, and unmatched characters are simple regex expressions.
+That leaves line comments, block comments, and strings.
+
+"--" signifies the start
+of a LINE_COMMENT %state. While in this state all characters should be ignored
+except newline which increments curr_lineno.
+
+"(*) starts the BLOCK_COMMENT state. this state also increments curr_lineno on
+a new line and ends with "(*". Because cool allows nested comments the number
+of "(*" and "(*" need to be tracked. This can be done by incrementing and
+decrementing a variable. All other characters are ignored. EOF inside a block
+comment raises an error.
+
+""" starts the STRING state. The four escape characters are explicitly checked.
+newline, null, and EOF cause an error token. "\" starts the BACKSLASH_ESCAPE
+state. In this state null and EOF still cause an error. All other characters
+are accepted in both states. Because null and EOF may not be the end of the
+token and he specification says to continue parsing a flag is set to true
+and used to raise the error after the closing """ is found.
+
+Commenting in the file is sparse because there is not very much code and all
+of the code follows basic jflex.
+
+The test cases on the other hand are fully commented. The test cases themselves
+try to hit every possible token as concisely as possible, followed by a short
+example program (the original test.cl). The tests also hit almost all of the
+error states (couldn't figure out how to put an EOF in the middle of a test
+file :\ ).

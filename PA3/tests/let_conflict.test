@@ -1,0 +1,3 @@
+class Hello {
+    test_id : Int <- let test_id2 : Int in let test_id3 : Int in 1+2+3;
+};

@@ -1,0 +1,11 @@
+class Blah{};
+
+class Blee inherits Blah {};
+
+class Main inherits IO{};
+
+(*duplicate class test*)
+(*class Main {};*)
+
+(*no such parent test*)
+class Blurg inherits Rick{};
