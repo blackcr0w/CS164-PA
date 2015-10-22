@@ -33,7 +33,8 @@ class ClassTable {
 
     private Hashtable<String, ArrayList<String>> classGraph;
     private Hashtable<String, class_c> nameToNodeMap; // needed for error reporting
-    private HashSet<String> primitiveClasses; // save non inheritable classes
+    private HashSet<String> primitiveClasses;
+    private Vector<class_c> basicClasses;
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -225,6 +226,14 @@ class ClassTable {
     primitiveClasses.add(boolName);
     primitiveClasses.add(strName);
 
+    basicClasses.add(Object_class);
+    basicClasses.add(IO_class);
+    basicClasses.add(Int_class);
+    basicClasses.add(Bool_class);
+    basicClasses.add(Str_class);
+
+
+
     // NOT TO BE INCLUDED IN SKELETON
 	
 //	Object_class.dump_with_types(System.err, 0);
@@ -249,7 +258,7 @@ class ClassTable {
     nameToNodeMap = new Hashtable<String, class_c>();
     primitiveClasses = new HashSet<String>();
 
-    installBasicClasses();
+    installBasicClasses(); // add the basic class to the class table
 
     /* required because classes do not need to be declared in order */
     LinkedList<class_c> noParent = new LinkedList();
@@ -352,6 +361,10 @@ class ClassTable {
                 marked.add(key);
             }
         }
+    }
+
+    public Enumeration getBasicElements() {
+        return basicClasses.elements();
     }
 
     /** Prints line number and file name of the given class.

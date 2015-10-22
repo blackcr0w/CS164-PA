@@ -10,6 +10,7 @@
 
 import java.util.Enumeration;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Vector;
 
 
@@ -274,13 +275,73 @@ class programc extends Program {
     System.out.println(classTable.toString());
 	
 	/* some semantic analysis code may go here */
+    SymbolTable st = new SymbolTable();
+    st.setClassTable(classTable);
 
-    /* fill in the class table */
+    addBasicClasses(st);
+    firstPass(st);
 
 	if (classTable.errors()) {
 	    System.err.println("Compilation halted due to static semantic errors.");
 	    System.exit(1);
 	}
+    }
+
+    /** Add basic classes to the SymbolTable.
+     *
+     * Don't need to type check, do need in the table in case other classes
+     * use or inherit from object.
+     */
+    public void addBasicClasses(SymbolTable st){
+        ClassTable ct = st.classTable();
+        for (Enumeration e = ct.getBasicElements(); e.hasMoreElements(); ) {
+            class_c curClass = (class_c)e.nextElement();
+            Features feats = curClass.getFeatures();
+            for (Enumeration<Feature> f = feats.getElements(); f.hasMoreElements();){
+                Feature curFeat = f.nextElement();
+                if(curFeat instanceof attr){
+                    addAttr(st, (attr)curFeat);
+                }
+                //else must be type method, or the parser would have thrown an error
+                else{
+                    addMethod(st, curClass, (method)curFeat);
+                }
+            }
+        }
+    }
+
+    /** Add attributes and methods to the provided symbol table.
+     *
+     *
+     *
+     * @param st the SymbolTable to add to
+     */
+    public void firstPass(SymbolTable st){
+        for (Enumeration<TreeNode> e = classes.getElements(); e.hasMoreElements();){
+            class_c curClass = (class_c)e.nextElement();
+            Features curFeat = curClass.getFeatures();
+            for (Enumeration<Feature> f = curFeat.getElements(); f.hasMoreElements();){
+
+            }
+        }
+    }
+
+    public void addMethod(SymbolTable st, class_c curClass, method curFeat){
+        HashMap mt = st.methodLookup();
+        HashMap vt = st.variableLookup();
+        AbstractSymbol methodName = curFeat.name;
+        AbstractSymbol className = curClass.getName();
+
+        Formals forms = curFeat.formals;
+        for (Enumeration<TreeNode> e = forms.getElements(); e.hasMoreElements();){
+            formalc curForm = (formalc)e.nextElement();
+            String type = curForm.type_decl.getString();
+
+        }
+    }
+
+    public void addAttr(SymbolTable st, attr curFeat){
+
     }
 }
 
