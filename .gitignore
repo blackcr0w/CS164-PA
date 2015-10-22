@@ -8,3 +8,5 @@ discussion3-demo/
 *.gz
 *.jar
 
+# ignore the output file for testing
+*.out
