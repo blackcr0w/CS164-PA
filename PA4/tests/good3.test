@@ -6,10 +6,10 @@ class A {
 };
 
 class B inherits A {
-
+    x:Int
     moo() : SELF_TYPE {
-       let b:C <- new C in
-         foo(4, b, b, b)
+       let x:C <- new C in
+         foo(4, b, b, b) + x
     };  
 };
 

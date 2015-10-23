@@ -10,9 +10,9 @@
 
 import java.util.Enumeration;
 import java.io.PrintStream;
+import java.util.HashMap;
 import java.util.Vector;
-import java.io.*;
-import java.util.*;
+
 
 /** Defines simple phylum Program */
 abstract class Program extends TreeNode {
@@ -154,7 +154,6 @@ abstract class Expression extends TreeNode {
             { out.println(Utilities.pad(n) + ": " + type.getString()); }
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
-        // jk: no_type is used in evaluating type of expressions
     }
 
 }
@@ -244,66 +243,127 @@ class programc extends Program {
     public void dump(PrintStream out, int n) {
         out.print(Utilities.pad(n) + "programc\n");
         classes.dump(out, n+2);
-    }    
+    }
+
+    
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_program");
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
-	    ((Class_)e.nextElement()).dump_with_types(out, n + 2);
+        ((Class_)e.nextElement()).dump_with_types(out, n + 2);
         }
     }
     /** This method is the entry point to the semantic checker.  You will
         need to complete it in programming assignment 4.
-	<p>
+    <p>
         Your checker should do the following two things:
-	<ol>
-	<li>Check that the program is semantically correct
-	<li>Decorate the abstract syntax tree with type information
+    <ol>
+    <li>Check that the program is semantically correct
+    <li>Decorate the abstract syntax tree with type information
         by setting the type field in each Expression node.
         (see tree.h)
-	</ol>
-	<p>
-	You are free to first do (1) and make sure you catch all semantic
-    	errors. Part (2) can be done in a second stage when you want
-	to test the complete compiler.
+    </ol>
+    <p>
+    You are free to first do (1) and make sure you catch all semantic
+        errors. Part (2) can be done in a second stage when you want
+    to test the complete compiler.
     */
     public void semant() {
-	/* ClassTable constructor may do some semantic analysis */
-	ClassTable classTable = new ClassTable(classes);
-	
-	/* some semantic analysis code may go here */
-    // System.out.println(classTable.toString());
-	if (classTable.errors()) {
-	    System.err.println("Compilation halted due to static semantic errors.");
-	    System.exit(1);
-	}
-    // jk: iterate throught the classTable to <==> traverse the AST
-    // for each class, traverse the AST, gather all declaration in the SymbolTable
-    // want to get the O, M, C of this class, put them into one scope
-    // every class is a new scope
-    SymbolTable classScope = new SymbolTable();
-    classScope.setClassTable(classTable);
+    /* ClassTable constructor may do some semantic analysis */
+    ClassTable classTable = new ClassTable(classes);
 
-    // jk: add all the class name to new scope
-    for (Enumeration<TreeNode> e = classes.getElements(); e.hasMoreElements();){
-        classScope.enterScope();
-        class_c currClass = (class_c)e.nextElement();
-        Features currFeature = currClass.getFeatures();  // jk: feature can be attr or method
-        Class currElement =  currFeature.getElementClass();
+    System.out.println(classTable.toString());
+    
+    /* some semantic analysis code may go here */
+    SymbolTable st = new SymbolTable();
+    st.setClassTable(classTable);
 
-        
-        classScope.addId(currClass, new Integer(0));  // do not know what integer goes here
-        get method parameters;
-        serach IDs in current scope 
-        add ID to scope 
-        exit scope
+    firstPass(st, st.classTable().getBasicElements());
+    firstPass(st, classes.getElements());
+    System.out.println("method size: " + st.methodLookup().size());
+    System.out.println("var size: " + st.variableLookup().size());
+    System.out.println("method: " + st.methodLookup());
+    System.out.println("var: " + st.variableLookup());
+    //firstPass(st);
+
+    if (classTable.errors()) {
+        System.err.println("Compilation halted due to static semantic errors.");
+        System.exit(1);
+    }
+    }
+
+    /** Add basic classes to the SymbolTable.
+     *
+     * Don't need to type check, do need in the table in case other classes
+     * use or inherit from object.
+     */
+    public void firstPass(SymbolTable st, Enumeration cls){
+        ClassTable ct = st.classTable();
+        for (Enumeration e = cls; e.hasMoreElements(); ) {
+            class_c curClass = (class_c)e.nextElement();
+            st.methodLookup().put(curClass.getName(), new HashMap<AbstractSymbol, method>());
+            st.variableLookup().put(curClass.getName(), new HashMap<AbstractSymbol, AbstractSymbol>());
+            Features feats = curClass.getFeatures();
+            for (Enumeration<Feature> f = feats.getElements(); f.hasMoreElements();){
+                Feature curFeat = f.nextElement();
+                if(curFeat instanceof attr){
+                    addAttr(st, curClass, (attr)curFeat);
+                }
+                //else must be of type 'method', or the parser would have thrown an error
+                else{
+                    addMethod(st, curClass, (method)curFeat);
+                }
+            }
+        }
+    }
+
+    /** Add attributes and methods to the provided symbol table.
+     *
+     *
+     *
+     * @param st the SymbolTable to add to
+     */
+    public void firstPass(SymbolTable st){
+        for (Enumeration<TreeNode> e = classes.getElements(); e.hasMoreElements();){
+            class_c curClass = (class_c)e.nextElement();
+            Features curFeat = curClass.getFeatures();
+            for (Enumeration<Feature> f = curFeat.getElements(); f.hasMoreElements();){
+
+            }
+        }
+    }
+
+    public void addMethod(SymbolTable st, class_c curClass, method curFeat){
+        HashMap mt = (HashMap)st.methodLookup();
+        AbstractSymbol className = curClass.getName();
+
+        /* add the method type to the method table */
+        // HashMap curMethodMap = new HashMap<AbstractSymbol, AbstractSymbol>();
+        HashMap curClassMethods = (HashMap)mt.get(className);
+        curClassMethods.put(curFeat.name, curFeat);
+        // mt.put(className, curMethodMap);        
+    }
+
+    public void addAttr(SymbolTable st, class_c curClass, attr curFeat){
+        HashMap vt = st.variableLookup();
+        AbstractSymbol className = curClass.getName();        
+        // HashMap formalsTable = new HashMap<AbstractSymbol, AbstractSymbol>();
+        HashMap curClassAttrs = (HashMap)vt.get(className);
+        curClassAttrs.put(curFeat.name, curFeat.type_decl);
+        // vt.put(className, formalsTable);
     }
 
 
-    }
-
+    /*public void getParameters(SymbolTable st, AbstractSymbol className, AbstractSymbol methodName){
+        Formals forms = curFeat.formals;
+        for (Enumeration<TreeNode> e = forms.getElements(); e.hasMoreElements();){
+            formalc curForm = (formalc)e.nextElement();
+            AbstractSymbol formalName = curForm.name;
+            AbstractSymbol formalType = curForm.type_decl;
+            formalsTable.put(formalName, formalType);
+        }        
+    }*/
 }
-
 
 /** Defines AST constructor 'class_c'.
     <p>
@@ -349,7 +409,7 @@ class class_c extends Class_ {
         Utilities.printEscapedString(out, filename.getString());
         out.println("\"\n" + Utilities.pad(n + 2) + "(");
         for (Enumeration e = features.getElements(); e.hasMoreElements();) {
-	    ((Feature)e.nextElement()).dump_with_types(out, n + 2);
+        ((Feature)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
     }
@@ -401,10 +461,10 @@ class method extends Feature {
         out.println(Utilities.pad(n) + "_method");
         dump_AbstractSymbol(out, n + 2, name);
         for (Enumeration e = formals.getElements(); e.hasMoreElements();) {
-	    ((Formal)e.nextElement()).dump_with_types(out, n + 2);
+        ((Formal)e.nextElement()).dump_with_types(out, n + 2);
         }
         dump_AbstractSymbol(out, n + 2, return_type);
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
     }
 
 }
@@ -446,7 +506,7 @@ class attr extends Feature {
         out.println(Utilities.pad(n) + "_attr");
         dump_AbstractSymbol(out, n + 2, name);
         dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
+    init.dump_with_types(out, n + 2);
     }
 
 }
@@ -525,7 +585,7 @@ class branch extends Case {
         out.println(Utilities.pad(n) + "_branch");
         dump_AbstractSymbol(out, n + 2, name);
         dump_AbstractSymbol(out, n + 2, type_decl);
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
     }
 
 }
@@ -562,8 +622,8 @@ class assign extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_assign");
         dump_AbstractSymbol(out, n + 2, name);
-	expr.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    expr.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -607,15 +667,15 @@ class static_dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_static_dispatch");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, type_name);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+    dump_type(out, n);
     }
 
 }
@@ -655,14 +715,14 @@ class dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_dispatch");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+    dump_type(out, n);
     }
 
 }
@@ -702,10 +762,10 @@ class cond extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_cond");
-	pred.dump_with_types(out, n + 2);
-	then_exp.dump_with_types(out, n + 2);
-	else_exp.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    pred.dump_with_types(out, n + 2);
+    then_exp.dump_with_types(out, n + 2);
+    else_exp.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -741,9 +801,9 @@ class loop extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_loop");
-	pred.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    pred.dump_with_types(out, n + 2);
+    body.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -779,11 +839,11 @@ class typcase extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_typcase");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         for (Enumeration e = cases.getElements(); e.hasMoreElements();) {
-	    ((Case)e.nextElement()).dump_with_types(out, n + 2);
+        ((Case)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+    dump_type(out, n);
     }
 
 }
@@ -816,9 +876,9 @@ class block extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_block");
         for (Enumeration e = body.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+    dump_type(out, n);
     }
 
 }
@@ -862,11 +922,11 @@ class let extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_let");
-	dump_AbstractSymbol(out, n + 2, identifier);
-	dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, identifier);
+    dump_AbstractSymbol(out, n + 2, type_decl);
+    init.dump_with_types(out, n + 2);
+    body.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -902,9 +962,9 @@ class plus extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_plus");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -940,9 +1000,9 @@ class sub extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_sub");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -978,9 +1038,9 @@ class mul extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_mul");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1016,9 +1076,9 @@ class divide extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_divide");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1050,8 +1110,8 @@ class neg extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_neg");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1087,9 +1147,9 @@ class lt extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_lt");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1125,9 +1185,9 @@ class eq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_eq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1163,9 +1223,9 @@ class leq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_leq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1197,8 +1257,8 @@ class comp extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_comp");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1230,8 +1290,8 @@ class int_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_int");
-	dump_AbstractSymbol(out, n + 2, token);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, token);
+    dump_type(out, n);
     }
 
 }
@@ -1263,8 +1323,8 @@ class bool_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_bool");
-	dump_Boolean(out, n + 2, val);
-	dump_type(out, n);
+    dump_Boolean(out, n + 2, val);
+    dump_type(out, n);
     }
 
 }
@@ -1296,10 +1356,10 @@ class string_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_string");
-	out.print(Utilities.pad(n + 2) + "\"");
-	Utilities.printEscapedString(out, token.getString());
-	out.println("\"");
-	dump_type(out, n);
+    out.print(Utilities.pad(n + 2) + "\"");
+    Utilities.printEscapedString(out, token.getString());
+    out.println("\"");
+    dump_type(out, n);
     }
 
 }
@@ -1331,8 +1391,8 @@ class new_ extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_new");
-	dump_AbstractSymbol(out, n + 2, type_name);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, type_name);
+    dump_type(out, n);
     }
 
 }
@@ -1364,8 +1424,8 @@ class isvoid extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_isvoid");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
 
 }
@@ -1393,7 +1453,7 @@ class no_expr extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_no_expr");
-	dump_type(out, n);
+    dump_type(out, n);
     }
 
 }
@@ -1425,10 +1485,9 @@ class object extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_object");
-	dump_AbstractSymbol(out, n + 2, name);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, name);
+    dump_type(out, n);
     }
 
 }
-
 

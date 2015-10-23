@@ -61,7 +61,9 @@ import java.util.HashMap;
 class SymbolTable {
     private Stack tbl;
     private HashMap<AbstractSymbol, HashMap<AbstractSymbol, method>> methodLookup;
+    // <class, <methoda name, method>>
     private HashMap<AbstractSymbol, HashMap<AbstractSymbol, AbstractSymbol>> variableLookup;
+    // <class, <attrID, attrTYPE>>
     public ClassTable classTable;
     /** Creates an empty symbol table. */
     public SymbolTable() {
