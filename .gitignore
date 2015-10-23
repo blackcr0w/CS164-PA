@@ -1,0 +1,11 @@
+gnore everything
+*
+
+# But not these files...
+!.gitignore
+!cool-tree.java
+!ClassTable.java
+# etc...
+
+# ...even if they are in subdirectories
+!*/
