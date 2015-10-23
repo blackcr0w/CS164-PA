@@ -34,6 +34,7 @@ class ClassTable {
     private Hashtable<String, ArrayList<String>> classGraph;
     private Hashtable<String, class_c> nameToNodeMap; // needed for error reporting
     private HashSet<String> primitiveClasses; // save non inheritable classes
+    private HashSet<AbstractSymbol> classSet;
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -207,7 +208,7 @@ class ClassTable {
     String intName = Int_class.getName().getString();
     classGraph.put(intName, new ArrayList());
     classGraph.get(objectName).add(intName);
-    nameToNodeMap.put(intName, Object_class);
+    nameToNodeMap.put(intName, Object_class);   
 
     String boolName = Bool_class.getName().getString();
     classGraph.put(boolName, new ArrayList());
@@ -248,6 +249,7 @@ class ClassTable {
     classGraph = new Hashtable<String, ArrayList<String>>();
     nameToNodeMap = new Hashtable<String, class_c>();
     primitiveClasses = new HashSet<String>();
+    classSet = new HashSet<AbstractSymbol>();
 
     installBasicClasses();
 
@@ -330,6 +332,7 @@ class ClassTable {
 
 
     checkClassHierarchy();
+    setClassSet();
     }
 
     /** Check or valid class hierarchy
@@ -352,6 +355,18 @@ class ClassTable {
                 marked.add(key);
             }
         }
+    }
+    // this is used to get all the classes in Type: class_c
+    public void setClassSet() {
+    	Enumeration<String> keys = nameToNodeMap.keys();
+    	while(keys.hasMoreElements()){
+			String key = keys.nextElement();
+			classSet.add(nameToNodeMap.get(key));
+		}
+    }
+
+    public void getNextClass() {
+    	
     }
 
     /** Prints line number and file name of the given class.

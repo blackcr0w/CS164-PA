@@ -280,7 +280,7 @@ class programc extends Program {
 	}
 
     SymbolTable classScope = new SymbolTable();
-    classScope.classTable = classTable;
+    classScope.setClassTable(classTable);
     // jk: iterate throught the classTable to <==> traverse the AST
     // for each class, traverse the AST, gather all declaration in the SymbolTable
     // want to get the O, M, C of this class, put them into one scope
