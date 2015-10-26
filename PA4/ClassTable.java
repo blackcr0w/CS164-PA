@@ -42,158 +42,158 @@ class ClassTable {
      * you want.
      * */
     private void installBasicClasses() {
-    AbstractSymbol filename 
-        = AbstractTable.stringtable.addString("<basic class>");
-    
-    // The following demonstrates how to create dummy parse trees to
-    // refer to basic Cool classes.  There's no need for method
-    // bodies -- these are already built into the runtime system.
+  AbstractSymbol filename 
+      = AbstractTable.stringtable.addString("<basic class>");
+  
+  // The following demonstrates how to create dummy parse trees to
+  // refer to basic Cool classes.  There's no need for method
+  // bodies -- these are already built into the runtime system.
 
-    // IMPORTANT: The results of the following expressions are
-    // stored in local variables.  You will want to do something
-    // with those variables at the end of this method to make this
-    // code meaningful.
+  // IMPORTANT: The results of the following expressions are
+  // stored in local variables.  You will want to do something
+  // with those variables at the end of this method to make this
+  // code meaningful.
 
-    // The Object class has no parent class. Its methods are
-    //        cool_abort() : Object    aborts the program
-    //        type_name() : Str        returns a string representation 
-    //                                 of class name
-    //        copy() : SELF_TYPE       returns a copy of the object
+  // The Object class has no parent class. Its methods are
+  //        cool_abort() : Object    aborts the program
+  //        type_name() : Str        returns a string representation 
+  //                                 of class name
+  //        copy() : SELF_TYPE       returns a copy of the object
 
-    class_c Object_class = 
-        new class_c(0, 
-               TreeConstants.Object_, 
-               TreeConstants.No_class,
-               new Features(0)
-               .appendElement(new method(0, 
-                          TreeConstants.cool_abort, 
-                          new Formals(0), 
-                          TreeConstants.Object_, 
-                          new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.type_name,
-                          new Formals(0),
-                          TreeConstants.Str,
-                          new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.copy,
-                          new Formals(0),
-                          TreeConstants.SELF_TYPE,
-                          new no_expr(0))),
-               filename);
-    
-    // The IO class inherits from Object. Its methods are
-    //        out_string(Str) : SELF_TYPE  writes a string to the output
-    //        out_int(Int) : SELF_TYPE      "    an int    "  "     "
-    //        in_string() : Str            reads a string from the input
-    //        in_int() : Int                "   an int     "  "     "
+  class_c Object_class = 
+      new class_c(0, 
+           TreeConstants.Object_, 
+           TreeConstants.No_class,
+           new Features(0)
+         .appendElement(new method(0, 
+                TreeConstants.cool_abort, 
+                new Formals(0), 
+                TreeConstants.Object_, 
+                new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.type_name,
+                new Formals(0),
+                TreeConstants.Str,
+                new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.copy,
+                new Formals(0),
+                TreeConstants.SELF_TYPE,
+                new no_expr(0))),
+           filename);
+  
+  // The IO class inherits from Object. Its methods are
+  //        out_string(Str) : SELF_TYPE  writes a string to the output
+  //        out_int(Int) : SELF_TYPE      "    an int    "  "     "
+  //        in_string() : Str            reads a string from the input
+  //        in_int() : Int                "   an int     "  "     "
 
-    class_c IO_class = 
-        new class_c(0,
-               TreeConstants.IO,
-               TreeConstants.Object_,
-               new Features(0)
-               .appendElement(new method(0,
-                          TreeConstants.out_string,
-                          new Formals(0)
-                          .appendElement(new formalc(0,
-                                     TreeConstants.arg,
-                                     TreeConstants.Str)),
-                          TreeConstants.SELF_TYPE,
-                          new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.out_int,
-                          new Formals(0)
-                          .appendElement(new formalc(0,
-                                     TreeConstants.arg,
-                                     TreeConstants.Int)),
-                          TreeConstants.SELF_TYPE,
-                          new no_expr(0)))
-               .appendElement(new method(0,
+  class_c IO_class = 
+      new class_c(0,
+           TreeConstants.IO,
+           TreeConstants.Object_,
+           new Features(0)
+         .appendElement(new method(0,
+                TreeConstants.out_string,
+                new Formals(0)
+              .appendElement(new formalc(0,
+                     TreeConstants.arg,
+                     TreeConstants.Str)),
+                TreeConstants.SELF_TYPE,
+                new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.out_int,
+                new Formals(0)
+              .appendElement(new formalc(0,
+                     TreeConstants.arg,
+                     TreeConstants.Int)),
+                TreeConstants.SELF_TYPE,
+                new no_expr(0)))
+         .appendElement(new method(0,
                        TreeConstants.in_string,
                        new Formals(0),
                        TreeConstants.Str,
                        new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.in_int,
-                          new Formals(0),
-                          TreeConstants.Int,
-                          new no_expr(0))),
-               filename);
+         .appendElement(new method(0,
+                TreeConstants.in_int,
+                new Formals(0),
+                TreeConstants.Int,
+                new no_expr(0))),
+           filename);
 
-    // The Int class has no methods and only a single attribute, the
-    // "val" for the integer.
+  // The Int class has no methods and only a single attribute, the
+  // "val" for the integer.
 
-    class_c Int_class = 
-        new class_c(0,
-               TreeConstants.Int,
-               TreeConstants.Object_,
-               new Features(0)
-               .appendElement(new attr(0,
-                        TreeConstants.val,
-                        TreeConstants.prim_slot,
-                        new no_expr(0))),
-               filename);
+  class_c Int_class = 
+      new class_c(0,
+           TreeConstants.Int,
+           TreeConstants.Object_,
+           new Features(0)
+         .appendElement(new attr(0,
+              TreeConstants.val,
+              TreeConstants.prim_slot,
+              new no_expr(0))),
+           filename);
 
-    // Bool also has only the "val" slot.
-    class_c Bool_class = 
-        new class_c(0,
-               TreeConstants.Bool,
-               TreeConstants.Object_,
-               new Features(0)
-               .appendElement(new attr(0,
-                        TreeConstants.val,
-                        TreeConstants.prim_slot,
-                        new no_expr(0))),
-               filename);
+  // Bool also has only the "val" slot.
+  class_c Bool_class = 
+      new class_c(0,
+           TreeConstants.Bool,
+           TreeConstants.Object_,
+           new Features(0)
+         .appendElement(new attr(0,
+              TreeConstants.val,
+              TreeConstants.prim_slot,
+              new no_expr(0))),
+           filename);
 
-    // The class Str has a number of slots and operations:
-    //       val                              the length of the string
-    //       str_field                        the string itself
-    //       length() : Int                   returns length of the string
-    //       concat(arg: Str) : Str           performs string concatenation
-    //       substr(arg: Int, arg2: Int): Str substring selection
+  // The class Str has a number of slots and operations:
+  //       val                              the length of the string
+  //       str_field                        the string itself
+  //       length() : Int                   returns length of the string
+  //       concat(arg: Str) : Str           performs string concatenation
+  //       substr(arg: Int, arg2: Int): Str substring selection
 
-    class_c Str_class =
-        new class_c(0,
-               TreeConstants.Str,
-               TreeConstants.Object_,
-               new Features(0)
-               .appendElement(new attr(0,
-                        TreeConstants.val,
-                        TreeConstants.Int,
-                        new no_expr(0)))
-               .appendElement(new attr(0,
-                        TreeConstants.str_field,
-                        TreeConstants.prim_slot,
-                        new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.length,
-                          new Formals(0),
-                          TreeConstants.Int,
-                          new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.concat,
-                          new Formals(0)
-                          .appendElement(new formalc(0,
-                                     TreeConstants.arg, 
-                                     TreeConstants.Str)),
-                          TreeConstants.Str,
-                          new no_expr(0)))
-               .appendElement(new method(0,
-                          TreeConstants.substr,
-                          new Formals(0)
-                          .appendElement(new formalc(0,
-                                     TreeConstants.arg,
-                                     TreeConstants.Int))
-                          .appendElement(new formalc(0,
-                                     TreeConstants.arg2,
-                                     TreeConstants.Int)),
-                          TreeConstants.Str,
-                          new no_expr(0))),
-               filename);
+  class_c Str_class =
+      new class_c(0,
+           TreeConstants.Str,
+           TreeConstants.Object_,
+           new Features(0)
+         .appendElement(new attr(0,
+              TreeConstants.val,
+              TreeConstants.Int,
+              new no_expr(0)))
+         .appendElement(new attr(0,
+              TreeConstants.str_field,
+              TreeConstants.prim_slot,
+              new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.length,
+                new Formals(0),
+                TreeConstants.Int,
+                new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.concat,
+                new Formals(0)
+              .appendElement(new formalc(0,
+                     TreeConstants.arg, 
+                     TreeConstants.Str)),
+                TreeConstants.Str,
+                new no_expr(0)))
+         .appendElement(new method(0,
+                TreeConstants.substr,
+                new Formals(0)
+              .appendElement(new formalc(0,
+                     TreeConstants.arg,
+                     TreeConstants.Int))
+              .appendElement(new formalc(0,
+                     TreeConstants.arg2,
+                     TreeConstants.Int)),
+                TreeConstants.Str,
+                new no_expr(0))),
+           filename);
 
-    /* Do something with Object_class, IO_class, Int_class,
+  /* Do something with Object_class, IO_class, Int_class,
            Bool_class, and Str_class here */
     String objectName = Object_class.getName().getString();
     classGraph.put(objectName, new ArrayList());
@@ -220,8 +220,9 @@ class ClassTable {
     classGraph.get(objectName).add(strName);
     nameToNodeMap.put(strName, Object_class);
 
+    /* can't inherit from these */
     //primitiveClasses.add(objectName);
-    primitiveClasses.add(ioName);
+    //primitiveClasses.add(ioName);
     primitiveClasses.add(intName);
     primitiveClasses.add(boolName);
     primitiveClasses.add(strName);
@@ -232,28 +233,25 @@ class ClassTable {
     basicClasses.add(Bool_class);
     basicClasses.add(Str_class);
 
-
-
     // NOT TO BE INCLUDED IN SKELETON
-    
+  
 //  Object_class.dump_with_types(System.err, 0);
 //  IO_class.dump_with_types(System.err, 0);
 //  Int_class.dump_with_types(System.err, 0);
 //  Bool_class.dump_with_types(System.err, 0);
 //  Str_class.dump_with_types(System.err, 0);
     }
-    
+  
 
-    /** Add the provided classes to the class graph
+    /** Add the provided classes to the class graph.
      *
-     * Expects the passes in classes to be an enumeration
-     *
+     *  Prints an error and ends execution if any of the classes form a cyclic graph.
      * */
     public ClassTable(Classes cls) {
-    semantErrors = 0;
-    errorStream = System.err;
-    
-    /* fill this in */
+  semantErrors = 0;
+  errorStream = System.err;
+  
+  /* fill this in */
     classGraph = new Hashtable<String, ArrayList<String>>();
     nameToNodeMap = new Hashtable<String, class_c>();
     primitiveClasses = new HashSet<String>();
@@ -294,10 +292,10 @@ class ClassTable {
      *
      *  Loop through a queue looking for classes with its parent already in the table.
      *  if such a class is found, then remove it from the queue and add to table
-     *  else add back to the queue
+     *  else add back to the queue.
      *
      *  if the entire queue is traversed without removing anything then there is a class
-     *  without an invalid parent
+     *  without a valid parent.
      */
     boolean didChange = true;
     while(noParent.size ()!= 0 && didChange){
@@ -368,6 +366,45 @@ class ClassTable {
         return basicClasses.elements();
     }
 
+    /** find the least upper bound class of e1 and e2.
+     *
+     *  lub() expects e1 and e1 to be in this ClassTable.
+     *
+     *  time O(n^2)
+     *  space O(1)
+     *
+     * @param e1 type 1
+     * @param e2 type 2
+     * @return the name of the least common ancestor of e1 and e1
+     */
+    public class_c lub(class_c e1, class_c e2){
+        /* one type is moves up the tree, the other searches all the way up the tree
+            through its parents checking if any parent is equal to the other type.
+            This is correct because the graph is always a dag. The graph is always a dag
+            because all classes have Object as an ancestor */
+        boolean notFound = true;
+        boolean checkingParents = true;
+        String moveTypeName = e1.getName().getString();
+        String searchTypeName = e2.getName().getString();
+        while(notFound){
+            while(checkingParents && notFound){
+                if(moveTypeName == searchTypeName){
+                    notFound = false;
+                }
+                searchTypeName = nameToNodeMap.get(searchTypeName).getParent().getString();
+                if(searchTypeName == TreeConstants.No_class.getString()){
+                    checkingParents = false;
+                }
+            }
+            if(notFound){
+                moveTypeName = nameToNodeMap.get(moveTypeName).getParent().getString();
+                searchTypeName = e2.getName().getString();
+                checkingParents = true;
+            }
+        }
+        return nameToNodeMap.get(moveTypeName);
+    }
+
     /** Prints line number and file name of the given class.
      *
      * Also increments semantic error count.
@@ -378,7 +415,7 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(class_c c) {
-    return semantError(c.getFilename(), c);
+  return semantError(c.getFilename(), c);
     }
 
     /** Prints the file name and the line number of the given tree node.
@@ -392,8 +429,8 @@ class ClassTable {
      *
      * */
     public PrintStream semantError(AbstractSymbol filename, TreeNode t) {
-    errorStream.print(filename + ":" + t.getLineNumber() + ": ");
-    return semantError();
+  errorStream.print(filename + ":" + t.getLineNumber() + ": ");
+  return semantError();
     }
 
     /** Increments semantic error count and returns the print stream for
@@ -404,18 +441,18 @@ class ClassTable {
      *
      * */
     public PrintStream semantError() {
-    semantErrors++;
-    return errorStream;
+  semantErrors++;
+  return errorStream;
     }
 
     /** Returns true if there are any static semantic errors. */
     public boolean errors() {
-    return semantErrors != 0;
+  return semantErrors != 0;
     }
 
     // NOT TO BE INCLUDED IN SKELETON
     public static void main(String[] args) {
-    new ClassTable(null).installBasicClasses();
+  new ClassTable(null).installBasicClasses();
     }
 
     public String toString(){
@@ -429,5 +466,5 @@ class ClassTable {
     }
 
 }
-              
+        
     
