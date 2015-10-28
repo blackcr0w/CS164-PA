@@ -203,22 +203,22 @@ class ClassTable {
     String ioName = IO_class.getName().getString();
     classGraph.put(ioName, new ArrayList());
     classGraph.get(objectName).add(ioName);
-    nameToNodeMap.put(ioName, Object_class);
+    nameToNodeMap.put(ioName, IO_class);
 
     String intName = Int_class.getName().getString();
     classGraph.put(intName, new ArrayList());
     classGraph.get(objectName).add(intName);
-    nameToNodeMap.put(intName, Object_class);
+    nameToNodeMap.put(intName, Int_class);
 
     String boolName = Bool_class.getName().getString();
     classGraph.put(boolName, new ArrayList());
     classGraph.get(objectName).add(boolName);
-    nameToNodeMap.put(boolName, Object_class);
+    nameToNodeMap.put(boolName, Bool_class);
 
     String strName = Str_class.getName().getString();
     classGraph.put(strName, new ArrayList());
     classGraph.get(objectName).add(strName);
-    nameToNodeMap.put(strName, Object_class);
+    nameToNodeMap.put(strName, Str_class);
 
     /* can't inherit from these */
     //primitiveClasses.add(objectName);
@@ -241,7 +241,6 @@ class ClassTable {
 //  Bool_class.dump_with_types(System.err, 0);
 //  Str_class.dump_with_types(System.err, 0);
     }
-  
 
     /** Add the provided classes to the class graph.
      *
@@ -370,22 +369,22 @@ class ClassTable {
      *
      *  lub() expects e1 and e1 to be in this ClassTable.
      *
-     *  time O(n^2)
+     *  time O(n^2), where n is the height of the tree
      *  space O(1)
      *
      * @param e1 type 1
      * @param e2 type 2
      * @return the name of the least common ancestor of e1 and e1
      */
-    public class_c lub(class_c e1, class_c e2){
+    public AbstractSymbol lub(String e1, String e2){
         /* one type is moves up the tree, the other searches all the way up the tree
             through its parents checking if any parent is equal to the other type.
             This is correct because the graph is always a dag. The graph is always a dag
             because all classes have Object as an ancestor */
         boolean notFound = true;
         boolean checkingParents = true;
-        String moveTypeName = e1.getName().getString();
-        String searchTypeName = e2.getName().getString();
+        String moveTypeName = e1;
+        String searchTypeName = e2;
         while(notFound){
             while(checkingParents && notFound){
                 if(moveTypeName == searchTypeName){
@@ -398,11 +397,37 @@ class ClassTable {
             }
             if(notFound){
                 moveTypeName = nameToNodeMap.get(moveTypeName).getParent().getString();
-                searchTypeName = e2.getName().getString();
+                searchTypeName = e2;
                 checkingParents = true;
             }
         }
-        return nameToNodeMap.get(moveTypeName);
+        return nameToNodeMap.get(moveTypeName).name;
+    }
+
+    /** check if e1 is a subtype of e2.
+     *  That is, return true if e2 = e1 or if e2 is an ancestor of e1.
+     *
+     * @param e1
+     * @param e2
+     * @return true if e1 is a subtype of e2, false otherwise
+     */
+    public boolean isSubtype(String e1, String e2){
+        /* search up the class tree starting from e1 until e1 == e2 or e1 is type object.
+        this is correct because the class graph is a dag. */
+        boolean isSubtype = false;
+        String typeName1 = e1;
+        String typeName2 = e2;
+        while(true){
+            if(typeName1 == typeName2){
+                isSubtype = true;
+                break;
+            }
+            typeName1 = nameToNodeMap.get(typeName1).getParent().getString();
+            if(typeName1 == TreeConstants.No_class.getString()){
+                break;
+            }
+        }
+        return isSubtype;
     }
 
     /** Prints line number and file name of the given class.
