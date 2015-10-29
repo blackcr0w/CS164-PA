@@ -27,6 +27,11 @@ class ADispatch inherits BDispatch{
 
  };
 
+
+
+
+
+
 (* test conditionals *)
 class ACond{
     x:Int <- if true then 1 else 2 fi; (* easy test *)
@@ -111,6 +116,64 @@ class C {
            }
 	};
 };
+
+
+
+(* sally-silly test: test SELF_TYPE  on return type *)
+class Silly {
+   copy() : SELF_TYPE { self };
+};
+
+class Sally inherits Silly { 
+  x:Int;
+  copy() : SELF_TYPE { 
+    {x <- 5;
+    self;}
+  };
+};
+
+class AselftypeA {
+   x : Sally <- (new Sally).copy();
+   test() : Sally { x };
+};
+
+
+(* test dynamic and static dspatch with SELF_TYPE *)
+class DispatchAndSelf inherits Sally{
+    x0:Int <- 5;
+    e0:SELF_TYPE;
+    e1:SELF_TYPE;
+     y0 : Sally;
+
+  copy0() : SELF_TYPE { 
+   { x0 <- 1;
+    self; 
+  }
+    };
+
+ };
+
+
+(* Test SELF_TYPE in new expression *)
+class AselftypeC {
+
+   var : Int <- 0;
+
+   value() : Int { var };
+
+   set_var(num : Int) : SELF_TYPE {  -- return self, work as constructor
+      {
+         var <- num;
+         self;
+      }
+   };
+
+   method1(num : Int) : SELF_TYPE {  -- same
+      self
+   };
+ };
+
+
 
 class Main inherits IO{
   testBInher:BInher <- new BInher;

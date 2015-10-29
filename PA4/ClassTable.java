@@ -376,11 +376,22 @@ class ClassTable {
      * @param e2 type 2
      * @return the name of the least common ancestor of e1 and e1
      */
-    public AbstractSymbol lub(String e1, String e2){
-        /* one type is moves up the tree, the other searches all the way up the tree
+    public AbstractSymbol lub(class_c curClass, String e1, String e2){
+        /* one type moves up the tree, the other searches all the way up the tree
             through its parents checking if any parent is equal to the other type.
             This is correct because the graph is always a dag. The graph is always a dag
             because all classes have Object as an ancestor */
+
+        // Handle SELF_TYPE
+        if(e1 == TreeConstants.SELF_TYPE.getString() && e2 == TreeConstants.SELF_TYPE.getString()){
+            return TreeConstants.SELF_TYPE;
+        }
+        if(e1 == TreeConstants.SELF_TYPE.getString()){
+            e1 = curClass.getName().getString();
+        }else if(e2 == TreeConstants.SELF_TYPE.getString()){
+            e2 = curClass.getName().getString();
+        }
+
         boolean notFound = true;
         boolean checkingParents = true;
         String moveTypeName = e1;
@@ -411,9 +422,19 @@ class ClassTable {
      * @param e2
      * @return true if e1 is a subtype of e2, false otherwise
      */
-    public boolean isSubtype(String e1, String e2){
+    public boolean isSubtype(class_c curClass, String e1, String e2){
         /* search up the class tree starting from e1 until e1 == e2 or e1 is type object.
         this is correct because the class graph is a dag. */
+
+        // Handle SELF_TYPE
+        if(e2 == TreeConstants.SELF_TYPE.getString() && e1 != TreeConstants.SELF_TYPE.getString()){
+            return false; // T <= SELF_TYPE is never true (minus extreme edge case that we ignore).
+        }else if(e2 == TreeConstants.SELF_TYPE.getString() && e1 == TreeConstants.SELF_TYPE.getString()){
+            return true; // SELF_TYPE <= SELF_TYPE always
+        }else if(e1 == TreeConstants.SELF_TYPE.getString()){
+            e1 = curClass.getName().getString();
+        }
+
         boolean isSubtype = false;
         String typeName1 = e1;
         String typeName2 = e2;
