@@ -8,7 +8,7 @@
 
 
 
-import sun.awt.Symbol;
+// import 
 
 import java.util.*;
 import java.io.PrintStream;
@@ -537,7 +537,7 @@ class programc extends Program {
         }else if(exp instanceof typcase){
              return typeCheckTypcase(st, curClass, (typcase) exp);
         }else if(exp instanceof assign){
-            return typeCheckAssign(st, curClass, (assign), exp);
+            return typeCheckAssign(st, curClass, (assign) exp);
         }
 
         return null;
@@ -605,12 +605,13 @@ class programc extends Program {
     public AbstractSymbol typeCheckAssign(SymbolTable st, class_c curClass, assign exp){
         AbstractSymbol T0 = exp.name;
         Expression e1 = exp.expr;
-        AbstractSymbo T1 = checkExpression(e1);
+        AbstractSymbol retType;
+        AbstractSymbol T1 = checkExpression(st, curClass, e1);
         String t0s = T0.getString();
         String t1s = T1.getString();
-        if (isSubtype(t1s, t0s)) {
+        if (st.classTable().isSubtype(t1s, t0s)) {
             retType = T1;
-        } else retType = Object_;
+        } else retType = TreeConstants.Object_;
         exp.set_type(T1);
         return retType;
     }  
