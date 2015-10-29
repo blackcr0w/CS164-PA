@@ -430,6 +430,23 @@ class ClassTable {
         return isSubtype;
     }
 
+    public boolean isType(AbstractSymbol className){
+        return nameToNodeMap.containsKey(className.getString());
+    }
+
+    /** return the provided class's parent class name.
+     *
+     * @param className
+     * @return the parent's name or null if an invalid class is passed (a class not in the class graph).
+     */
+    public AbstractSymbol getParentName(AbstractSymbol className){
+        class_c curClass = nameToNodeMap.get(className.getString());
+        if(curClass == null){
+            return null;
+        }
+        return curClass.getParent();
+    }
+
     /** Prints line number and file name of the given class.
      *
      * Also increments semantic error count.

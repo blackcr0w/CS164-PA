@@ -412,9 +412,9 @@ class programc extends Program {
             AbstractSymbol T = checkExpression(st, curClass, curFeat.init);
             if(T != curFeat.type_decl){
                 String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
-                    "attribute \"" + curFeat.name.getString() + "\":" +
-                    "\n\tInferred type \"" + T.getString() +
-                    "\" does not match declared type \"" + curFeat.type_decl.getString() + "\"\n";
+                        "attribute \"" + curFeat.name.getString() + "\":" +
+                        "\n\tInferred type \"" + T.getString() +
+                        "\" does not match declared type \"" + curFeat.type_decl.getString() + "\"\n";
                 st.classTable.semantError(curClass).append(errorStr).flush();
             }
         }
@@ -457,6 +457,26 @@ class programc extends Program {
         }
     }
 
+    /** Check if the type exists in the class table (i.e. if type is a class name).
+     *
+     * Reports an error if "type" it is not a type.
+     *
+     * @param st Symbol Table
+     * @param curClass
+     * @param type the type to check
+     * @return true if the type is in the class table, else false
+     */
+    public boolean isType(SymbolTable st, class_c curClass, AbstractSymbol type){
+        boolean isAType = st.classTable().isType(type);
+        if(!isAType){
+            String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
+                    "expression \"new\":" +
+                    "\n\ttype \"" + type.getString() + "\" not found.\n";
+            st.classTable.semantError(curClass).append(errorStr).flush();
+        }
+        return isAType;
+    }
+
     /** Type check expressions.
      *
      *  prints out an error message if an expression fails to type check, but does not stop
@@ -475,6 +495,9 @@ class programc extends Program {
         }else if(exp instanceof string_const){
             exp.set_type(TreeConstants.Str);
             return TreeConstants.Str;
+        }else if(exp instanceof bool_const){
+            exp.set_type(TreeConstants.Bool);
+            return TreeConstants.Bool;
         }else if(exp instanceof object){
             return typeCheckObject(st, curClass, (object)exp);
         }else if(exp instanceof cond){
@@ -509,12 +532,13 @@ class programc extends Program {
             return typeCheckIsVoid(st, curClass, (isvoid)exp);
         }else if(exp instanceof block){
             return typeCheckBlock(st, curClass, (block)exp);
+        }else if(exp instanceof loop){
+             return typeCheckLoop(st, curClass, (loop)exp);
+        }else if(exp instanceof typcase){
+             return typeCheckTypcase(st, curClass, (typcase) exp);
+        }else if(exp instanceof assign){
+            return typeCheckAssign(st, curClass, (assign), exp);
         }
-        // else if(exp instanceof loop){
-        //     return typeCheckLoop(st, curClass, (loop)exp);
-        // }else if(exp instanceof Cases){
-        //     return typeCheckCases(st, curClass, (Cases)exp);
-        // }
 
         return null;
     }
@@ -529,7 +553,7 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             objType = TreeConstants.Object_;
         }else{
-            exp.set_type((AbstractSymbol)objType);
+            exp.set_type((AbstractSymbol) objType);
         }
         return (AbstractSymbol)objType;
     }
@@ -576,6 +600,84 @@ class programc extends Program {
             exp.set_type(TreeConstants.Int);  // jk: why we set_type here
         }
         return retType;
+    }
+
+    public AbstractSymbol typeCheckAssign(SymbolTable st, class_c curClass, assign exp){
+        AbstractSymbol T0 = exp.name;
+        Expression e1 = exp.expr;
+        AbstractSymbo T1 = checkExpression(e1);
+        String t0s = T0.getString();
+        String t1s = T1.getString();
+        if (isSubtype(t1s, t0s)) {
+            retType = T1;
+        } else retType = Object_;
+        exp.set_type(T1);
+        return retType;
+    }  
+
+    public AbstractSymbol typeCheckBlock(SymbolTable st, class_c curClass, block exp){
+        AbstractSymbol retType = null;
+        Expression e1 = null;
+        for (Enumeration<Expression> e = exp.body.getElements(); e.hasMoreElements();){
+            e1 = e.nextElement();
+            retType = checkExpression(st, curClass, e1);
+        }
+
+        // make sure there was at least one expression
+        if(retType == null){
+            String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
+                    "expression \"block\": \n\tNo expressions found.\n";
+            st.classTable.semantError(curClass).append(errorStr).flush();
+            retType = TreeConstants.Object_;
+        }
+        exp.set_type(retType);
+        return retType;
+    }
+
+    public AbstractSymbol typeCheckLoop(SymbolTable st, class_c curClass, loop exp){
+        AbstractSymbol e1 = checkExpression(st, curClass, exp.pred);
+        AbstractSymbol e2 = checkExpression(st, curClass, exp.body);
+        if(e1 != TreeConstants.Bool){
+            String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
+                    "expression \"loop\":" +
+                    "\n\tpredicate is type \"" + e1.getString() +
+                    "\" should be type \"" + TreeConstants.Bool.getString() + "\".\n";
+            st.classTable.semantError(curClass).append(errorStr).flush();
+        }
+        exp.set_type(TreeConstants.Object_);
+        return TreeConstants.Object_;
+    }
+
+    public AbstractSymbol typeCheckTypcase(SymbolTable st, class_c curClass, typcase exp){
+        Vector<AbstractSymbol> casesTypes = new Vector<AbstractSymbol>();
+        branch b1 = null;
+        //collect all case branch expression types
+        for (Enumeration<branch> e = exp.cases.getElements(); e.hasMoreElements();){
+            b1 = e.nextElement();
+            st.enterScope();
+            st.addId(b1.name, b1.type_decl);
+            casesTypes.add(checkExpression(st, curClass, b1.expr));
+            st.exitScope();
+        }
+
+        if(casesTypes.size() == 0){
+            String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
+                    "expression \"case\": case must have at least one branch.\n";
+            st.classTable.semantError(curClass).append(errorStr).flush();
+        }
+
+        // find the lub of all the case branch expression types
+        AbstractSymbol retType = null;
+        ClassTable ct = st.classTable();
+        Enumeration<AbstractSymbol> lube = casesTypes.elements();
+        AbstractSymbol type1 = lube.nextElement();
+        AbstractSymbol type2 = null;
+        while(lube.hasMoreElements()){
+            type2 = lube.nextElement();
+            type1 = ct.lub(type1.getString(), type2.getString());
+        }
+        exp.set_type(type1);
+        return type1;
     }
 
     public AbstractSymbol typeCheckSub(SymbolTable st, class_c curClass, sub exp){
@@ -639,9 +741,9 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             retType = TreeConstants.Object_;
         }
+        exp.set_type(retType);
         return retType;
     }
-
 
     public AbstractSymbol typeCheckLt(SymbolTable st, class_c curClass, lt exp){
         AbstractSymbol retType = TreeConstants.Bool;
@@ -664,30 +766,28 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             retType = TreeConstants.Object_;
         }
+        exp.set_type(retType);
         return retType;
     }
-
 
     public AbstractSymbol typeCheckEq(SymbolTable st, class_c curClass, eq exp){
-        // AbstractSymbol retType = TreeConstants.Int;
         AbstractSymbol T1 = checkExpression(st, curClass, exp.e1);
         AbstractSymbol T2 = checkExpression(st, curClass, exp.e2);
-        // jk: need to re-write and test: every basic type evaluate to same OBJ?
-        // jk: is this works in other types??
-        if (T1 != T2) {  
-            String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
-                    "expression \"eq\":" +
-                    "\n\tInferred type of LHS is \"" + T1.getString() +
-                    "\n\tInferred type of EHS is \"" + T2.getString() +
-                    "\". Not comparable.\n";
-            st.classTable.semantError(curClass).append(errorStr).flush();
-            retType = TreeConstants.Object_;
+        if ((T1 == TreeConstants.Int || T1 == TreeConstants.Bool || T1 == TreeConstants.Str) ||
+            (T2 == TreeConstants.Int || T2 == TreeConstants.Bool || T2 == TreeConstants.Str)) {
+            if(T1 != T2){
+                String errorStr = "\n\tClass \"" + curClass.getName().getString() + "\", " +
+                        "expression \"eq\":" +
+                        "\n\tInferred type of LHS is \"" + T1.getString() +
+                        "\n\tInferred type of EHS is \"" + T2.getString() +
+                        "\". Not comparable.\n";
+                st.classTable.semantError(curClass).append(errorStr).flush();
+                return TreeConstants.Object_;
             }
-        else retType = Bool;
-        return retType;
+        }
+        exp.set_type(TreeConstants.Bool);
+        return TreeConstants.Bool;
     }
-
-
 
     public AbstractSymbol typeCheckLeq(SymbolTable st, class_c curClass, leq exp){
         AbstractSymbol retType = TreeConstants.Bool;
@@ -710,9 +810,9 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             retType = TreeConstants.Object_;
         }
+        exp.set_type(retType);
         return retType;
-    }    
-
+    }
 
     public AbstractSymbol typeCheckComp(SymbolTable st, class_c curClass, comp exp){
         AbstractSymbol retType = TreeConstants.Int;
@@ -725,6 +825,7 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             retType = TreeConstants.Object_;
         }
+        exp.set_type(retType);
         return retType;
     }
 
@@ -749,31 +850,30 @@ class programc extends Program {
             st.classTable.semantError(curClass).append(errorStr).flush();
             retType = TreeConstants.Object_;
         }
+        exp.set_type(retType);
         return retType;
-    }    
-
+    }
 
     public AbstractSymbol typeCheckNew(SymbolTable st, class_c curClass, new_ exp){
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
         AbstractSymbol typeName = exp.type_name;
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
-        //NEED TO CHECK IF THIS TYPE EXISTS (I.E. IF IT'S A VALID CLASS)
+
+        // check if the type exists in the class table
+        if(!isType(st, curClass, typeName)){
+            return TreeConstants.Object_;
+        }
 
         if(typeName == TreeConstants.SELF_TYPE){
-            exp.set_type(curClass.name);
+            exp.set_type(TreeConstants.Int);
             return curClass.name;
         }
         exp.set_type(typeName);
         return typeName;
     }
 
-
     public AbstractSymbol typeCheckIsVoid(SymbolTable st, class_c curClass, isvoid exp){
-        AbstractSymbol retType = TreeConstants.Bool;
-        return retType;
+        AbstractSymbol e1 = checkExpression(st, curClass, exp.e1);
+        exp.set_type(TreeConstants.Object_);
+        return TreeConstants.Object_;
     }
 
     public AbstractSymbol typeCheckLet(SymbolTable st, class_c curClass, let exp){
@@ -907,7 +1007,7 @@ class programc extends Program {
      * @return enumeration of return and formal types of the method (in that order).
      */
     public Enumeration<AbstractSymbol> methodRetAndFormalTypes(SymbolTable st,
-                                                                AbstractSymbol className, AbstractSymbol methodName){
+                                                               AbstractSymbol className, AbstractSymbol methodName){
         Vector formalsAndRetType = new Vector<AbstractSymbol>();
         method m = (method)((HashMap)st.methodLookup().get(className)).get(methodName);
         System.out.println("className: " + className + " name: " + methodName + " methodOBject: " + m);
@@ -916,8 +1016,8 @@ class programc extends Program {
             formalsAndRetType.add(((formalc)e.nextElement()).type_decl);
         }
         return formalsAndRetType.elements();
-    } 
-    
+    }
+
 }
 
 /** Defines AST constructor 'class_c'.
