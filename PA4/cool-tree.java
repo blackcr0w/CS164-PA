@@ -517,7 +517,7 @@ class programc extends Program {
         }else if(exp instanceof divide){
             return typeCheckDiv(st, curClass, (divide)exp);
         }else if(exp instanceof neg){
-            return typeCheckNeg(st, curClass, (neg)exp);
+            return typeCheckComp(st, curClass, (neg)exp);
         }else if(exp instanceof lt){
             return typeCheckLt(st, curClass, (lt)exp);
         }else if(exp instanceof eq){
@@ -525,7 +525,7 @@ class programc extends Program {
         }else if(exp instanceof leq){
             return typeCheckLeq(st, curClass, (leq)exp);
         }else if(exp instanceof comp){
-            return typeCheckComp(st, curClass, (comp)exp);
+            return typeCheckNeg(st, curClass, (comp)exp);
         }else if(exp instanceof new_){
             return typeCheckNew(st, curClass, (new_)exp);
         }else if(exp instanceof isvoid){
@@ -731,7 +731,7 @@ class programc extends Program {
         return retType;
     }
 
-    public AbstractSymbol typeCheckNeg(SymbolTable st, class_c curClass, neg exp){
+    public AbstractSymbol typeCheckNeg(SymbolTable st, class_c curClass, comp exp){
         AbstractSymbol retType = TreeConstants.Bool;
         AbstractSymbol T1 = checkExpression(st, curClass, exp.e1);
         if(T1 != TreeConstants.Bool){
@@ -815,7 +815,7 @@ class programc extends Program {
         return retType;
     }
 
-    public AbstractSymbol typeCheckComp(SymbolTable st, class_c curClass, comp exp){
+    public AbstractSymbol typeCheckComp(SymbolTable st, class_c curClass, neg exp){
         AbstractSymbol retType = TreeConstants.Int;
         AbstractSymbol T1 = checkExpression(st, curClass, exp.e1);
         if(T1 != TreeConstants.Bool){
