@@ -1,0 +1,7 @@
+#!/bin/bash
+# example run is ./lexer foobar.cl | ./parser
+
+SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
+
+COOLC_JAR="$SCRIPT_LOCATION/coolc.jar"
+java -cp "$COOLC_JAR" Parser $*

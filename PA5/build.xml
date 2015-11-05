@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="PA5" default="source">
+  <description>
+    CS164 Programming Assignment #5
+  </description>
+
+  <!-- set global properties for this build -->
+  <property environment="env"/>
+  <property name="assn" value="5"/>
+  <property name="class" value="cs164"/>
+
+  <property name="src" value="CgenClassTable.java CgenNode.java CgenSupport.java TreeConstants.java cool-tree.java IntSymbol.java StringSymbol.java BoolConst.java example.cl README"/>
+  <property name="csrc" value="ASTConstants.java ASTLexer.java ASTParser.java AbstractSymbol.java AbstractTable.java Flags.java IdSymbol.java IdTable.java IntTable.java ListNode.java Cgen.java StringTable.java SymbolTable.java SymtabExample.java TokenConstants.java TreeNode.java ClassTable.java Utilities.java"/>
+
+  <property name="cfil" value="*.java"/>
+
+  <property name="tsrc" value="mycoolc"/>
+  <property name="lsrc" value="build.xml tests/1.cl tests/2.cl tests/3.cl tests/4.cl tests/5.cl tests/6.cl"/>
+  <property name="output" value="example.output"/>
+
+
+  <path id="classpath">
+    <dirset dir="."/>
+    <fileset dir="." file="coolc.jar"/>
+  </path>
+  <property name="classpath.unix" value=".:./coolc.jar"/>
+
+
+  <!-- target: test -->
+  <target name="test" depends="cgen">
+    <exec executable="./mycoolc">
+      <arg line="example.cl"/>
+    </exec>
+	 <exec executable="./runmips" output="example.output">
+      <arg line="example.s"/>
+    </exec>
+  </target>
+
+  <!-- target: semant -->
+  <target name="cgen" depends="cls">
+    <delete file="./cgen"/>
+    <echo file="./cgen">#!/bin/bash
+java -classpath ${classpath.unix} Cgen $$*
+    </echo>
+    <chmod perm="u+rx" file="cgen"/>
+  </target>
+
+  <target name="symtab-example" depends="cls">
+    <delete file="symtab-example"/>
+    <echo file="./symtab-example">#!/bin/bash
+java -classpath ${classpath.unix} SymtabExample $$*
+    </echo>
+    <chmod perm="u+rx" file="symtab-example"/>
+  </target>
+
+  <target name="cls" depends="getCoolCJar,clean">
+    <javac srcdir="." destdir="." includes="${cfil}" debug="true" nowarn="true">
+      <classpath refid="classpath"/>
+    </javac>
+    <touch file="cool-tree.class"/>
+  </target>
+
+  <target name="getCoolCJar" depends="coolCJarPresent" unless="coolcPresent">
+	  <fail message="You must have coolc.jar in this directory."/>
+  </target>
+
+  <target name="coolCJarPresent">
+    <available file="coolc.jar" property="coolcPresent"/>
+  </target>
+
+  <!-- target: clean -->
+  <target name="clean">
+    <delete>
+      <fileset dir="." includes="*~ *.s *.class ${cgen} ${output}"/>
+      <fileset dir="." includes="core cgen symtab-example"/>
+    </delete>
+  </target>
+
+
+  <!-- target: submit-clean -->
+  <target name="submit-clean" depends="test">
+    <delete>
+      <fileset dir="." includes="*~ *.s *.class ${cgen}"/>
+      <fileset dir="." includes="core cgen symtab-example"/>
+    </delete>
+  </target>
+</project>

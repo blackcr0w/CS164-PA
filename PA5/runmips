@@ -1,0 +1,9 @@
+#!/bin/bash
+# example run is ./runmips foobar.s
+
+SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
+
+COOLC_JAR="$SCRIPT_LOCATION/coolc.jar"
+MIPS_HANDLER="$SCRIPT_LOCATION/trap_handler.mars"
+
+java -cp "$COOLC_JAR" Mars me sm "$MIPS_HANDLER" $*

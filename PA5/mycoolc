@@ -1,0 +1,9 @@
+#!/bin/bash
+# example run is ./mycoolc foobar.cl
+
+if [ ! -f ./cgen ]
+then
+	echo "No cgen made yet - use 'ant cgen' to make it"
+	exit 1
+fi
+(./lexer $* | ./parser $* | ./semant $* | ./cgen $*)

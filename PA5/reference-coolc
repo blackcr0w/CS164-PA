@@ -1,0 +1,11 @@
+#!/bin/bash
+# example run is ./reference-coolc foobar.cl
+
+SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
+
+COOLC_JAR="$SCRIPT_LOCATION/coolc.jar"
+
+java -cp "$COOLC_JAR" Lexer $* | \
+java -cp "$COOLC_JAR" Parser $* | \
+java -cp "$COOLC_JAR" Semant $* | \
+java -cp "$COOLC_JAR" Cgen $*

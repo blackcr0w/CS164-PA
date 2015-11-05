@@ -1,0 +1,25 @@
+#!/bin/bash
+# example run is ./compare-cgen foobar.cl
+
+SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
+COOLC_JAR="$SCRIPT_LOCATION/coolc.jar"
+
+$SCRIPT_LOCATION/reference-coolc $1 2>&1
+mv "${1%.cl}.s" "$1.out.ref.s"
+$SCRIPT_LOCATION/mycoolc $1 2>&1
+mv "${1%.cl}.s" "$1.out.my.s"
+
+$SCRIPT_LOCATION/runmips $1.out.ref.s > $1.out.ref 2>&1
+$SCRIPT_LOCATION/runmips $1.out.my.s > $1.out.my 2>&1
+
+DIFF="$(diff $1.out.my $1.out.ref 2>&1)"
+if [ "$?" == "0" ]
+then
+	echo "Your output exactly matched the reference output"
+else
+	echo "< Your output"
+	echo "> Reference output"
+	echo "$DIFF"
+	echo
+	echo "Your output is difference from the reference output"
+fi
