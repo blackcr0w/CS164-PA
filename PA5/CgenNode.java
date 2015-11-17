@@ -20,7 +20,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 */
 
 // This is a project skeleton file
-
+// CAN MODIFY
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;

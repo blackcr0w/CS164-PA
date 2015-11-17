@@ -12,4 +12,18 @@ discussion3-demo/
 *.out
 ./PA4/!.cool-tree.java
 ./PA4/!.ClassTable.java
-./PA4/!.tests/*
+./PA4/!.tests/
+
+# Ignore everything in PA5
+PA5/*
+
+# But not these files...
+PA5/!.java
+PA5/!.cl
+
+# ignore everything in the original PA5 folder
+PA5-original/*
+
+# ignore every .pdf file
+*.pdf
+

@@ -52,7 +52,7 @@ class StringSymbol extends AbstractSymbol {
 
 	/* Add code to reference the dispatch table for class String here */
 
-	s.println("");		// dispatch table
+	s.println("String_dispTab");		// dispatch table
 	s.print(CgenSupport.WORD); lensym.codeRef(s); s.println(""); // length
 	CgenSupport.emitStringConstant(str, s); // ascii string
 	s.print(CgenSupport.ALIGN); // align to word

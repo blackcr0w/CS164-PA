@@ -1,5 +1,7 @@
-class Main inherits IO {
-  main():Object {
-    out_string("whassup?!\n")
-  };
+class Main {
+	a : Int;
+  	main():Object {
+    	a <- 5
+  	};
 };
+

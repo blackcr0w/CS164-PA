@@ -36,6 +36,7 @@ class StringTable extends AbstractTable {
      * */
     public void codeStringTable(int stringclasstag, PrintStream s) {
 	StringSymbol sym = null;
+    // tbl is defined in AbstractTable
 	for (int i = tbl.size() - 1; i >= 0; i--) {
 	    try {
 		sym = (StringSymbol)tbl.elementAt(i);

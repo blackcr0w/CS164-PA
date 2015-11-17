@@ -20,7 +20,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 */
 
 // This is a project skeleton file
-
+	// str.println("jkdebug: 2"); 
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
@@ -76,6 +76,7 @@ class CgenClassTable extends SymbolTable {
 
 	str.println(CgenSupport.INTTAG + CgenSupport.LABEL 
 		    + CgenSupport.WORD + intclasstag);
+
 	str.println(CgenSupport.BOOLTAG + CgenSupport.LABEL 
 		    + CgenSupport.WORD + boolclasstag);
 	str.println(CgenSupport.STRINGTAG + CgenSupport.LABEL 
@@ -139,16 +140,55 @@ class CgenClassTable extends SymbolTable {
      * as a side effect adds the string's length to the integer table.
      * The constants are emmitted by running through the stringtable and
      * inttable and producing code for each entry. */
+
+    // jk: should add disp_table here
     private void codeConstants() {
 	// Add constants that are required by the code generator.
 	AbstractTable.stringtable.addString("");
 	AbstractTable.inttable.addString("0");
 
+	// jk: emit str_const here
 	AbstractTable.stringtable.codeStringTable(stringclasstag, str);
+
+	// jk: emit int_const here
 	AbstractTable.inttable.codeStringTable(intclasstag, str);
+
 	codeBools(boolclasstag);
     }
+    
+// class_nameTab:
+// 	.word	str_const5
+// 	.word	str_const6
+// 	.word	str_const7
+// 	.word	str_const8
+// 	.word	str_const9
+// 	.word	str_const10
 
+    private void codeClassNameTable() {
+    	str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
+    	// collect all class name and print them
+    	for(CgenNode node: taggedNodes.values()) {
+    		str.print(CgenSupport.WORD);
+    		((StringSymbol) AbstractTable.stringtable.lookup(node.name.getString())).codeRef(str);
+        	str.println();
+    	}
+    }    
+
+    private void codePrototypeObjects() {
+    	return;
+    }
+
+    private void codeClassNameTable() {
+    	return;
+    }
+
+    private void codeClassObjectTable() {
+    	return;
+    }
+
+    private void codeDispatchTbale() {
+    	return;
+    }
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -370,7 +410,7 @@ class CgenClassTable extends SymbolTable {
 	CgenNode parent = (CgenNode)probe(nd.getParent());
 	nd.setParentNd(parent);
 	parent.addChild(nd);
-    }
+    }    
 
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
@@ -378,41 +418,58 @@ class CgenClassTable extends SymbolTable {
 
 	this.str = str;
 
-	stringclasstag = 0 /* Change to your String class tag here */;
-	intclasstag =    0 /* Change to your Int class tag here */;
-	boolclasstag =   0 /* Change to your Bool class tag here */;
+	// jk: modified classtag here
+	stringclasstag = 4;
+	// ((CgenNode)this.lookup(TreeConstants.Str)).getClassTag(); 
+	/* Change to your String class tag here */;
+	intclasstag = 3;
+	// ((CgenNode)this.lookup(TreeConstants.Int)).getClassTag(); 
+	/* Change to your Int class tag here */;
+	boolclasstag = 5;
+	// ((CgenNode)this.lookup(TreeConstants.Bool)).getClassTag();
+	/* Change to your Bool class tag here */;
 
-	enterScope();
+	enterScope();  // enter scope
+
 	if (Flags.cgen_debug) System.out.println("Building CgenClassTable");
 	
+	// jk: for building inheritance graph
 	installBasicClasses();
 	installClasses(cls);
 	buildInheritanceTree();
 
 	code();
 
-	exitScope();
+	exitScope();  // exit scope
     }
 
     /** This method is the meat of the code generator.  It is to be
         filled in programming assignment 5 */
     public void code() {
 	if (Flags.cgen_debug) System.out.println("coding global data");
-	codeGlobalData();
+
+	codeGlobalData();  // first: global data
 
 	if (Flags.cgen_debug) System.out.println("choosing gc");
-	codeSelectGc();
+
+	codeSelectGc();  // second: garbage collection
 
 	if (Flags.cgen_debug) System.out.println("coding constants");
-	codeConstants();
 
+	codeConstants();  // third: constants
+	CgenSupport.emitDispTableRef(TreeConstants.Str, str);
 	//                 Add your code to emit
 	//                   - prototype objects
 	//                   - class_nameTab
 	//                   - dispatch tables
+	
+	codeClassNameTable();
+	codeClassObjectTable();
+	codeDispatchTbale();
+	codePrototypeObjects();
 
 	if (Flags.cgen_debug) System.out.println("coding global text");
-	codeGlobalText();
+	codeGlobalText();  // fourth: global text
 
 	//                 Add your code to emit
 	//                   - object initializer
