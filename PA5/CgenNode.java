@@ -96,10 +96,20 @@ class CgenNode extends class_c {
 	return basic_status == Basic; 
     }
 
+    int getClassTag() {
+        if(this.tag == -1){
+            // System.out.println("this.tag = " + Integer.toString(this.tag));
+            // Utilities.fatalError("class tag not yet set in CgenNode.getClassTag");
+        }
+        return this.tag;
+    }
+
     // jk: set the classTag of current class, changeName
     void setClassTag(int classTag) {
+        // the initial tag should be -1
         if (this.tag != -1) {
-            Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
+            System.out.println("this.tag = " + Integer.toString(this.tag));
+            // Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
         }
         this.tag = classTag;
     }

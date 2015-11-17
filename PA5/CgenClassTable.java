@@ -57,7 +57,9 @@ class CgenClassTable extends SymbolTable {
     }
 
     // set the current class's tag number, increase counter
+    // jk: object = 0
     public void setClassTagsHelper(CgenNode curNode) {
+    	// jk: pass in the root node: object
     	curNode.setClassTag(currentNameTag);
     	taggedNodes.put(curNode.getName(), curNode);  // jk; put <AbstractSymbol, CgenNode>
     	currentNameTag++;
@@ -200,6 +202,7 @@ class CgenClassTable extends SymbolTable {
 // question: how to get the str_constX??
 // from the string name get the 
     private void codeClassNameTable() {
+    	
     	str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
     	// collect all class name and print them
     	for(CgenNode node: taggedNodes.values()) {
@@ -237,6 +240,7 @@ class CgenClassTable extends SymbolTable {
 	// SELF_TYPE is the self class; it cannot be redefined or
 	// inherited.  prim_slot is a class known to the code generator.
 
+	    // jk: installClass: put class in the cgenNode list
 	addId(TreeConstants.No_class,
 	      new CgenNode(new class_c(0,
 				      TreeConstants.No_class,
@@ -424,6 +428,7 @@ class CgenClassTable extends SymbolTable {
 	addId(name, nd);
     }
 
+    // install other non-basic classes to the list
     private void installClasses(Classes cs) {
         for (Enumeration e = cs.getElements(); e.hasMoreElements(); ) {
 	    installClass(new CgenNode((Class_)e.nextElement(), 
@@ -431,12 +436,14 @@ class CgenClassTable extends SymbolTable {
         }
     }
 
+    /** nds: All classes in the program, represented as CgenNode */
     private void buildInheritanceTree() {
-	for (Enumeration e = nds.elements(); e.hasMoreElements(); ) {
-	    setRelations((CgenNode)e.nextElement());
-	}
+		for (Enumeration e = nds.elements(); e.hasMoreElements(); ) {
+		    setRelations((CgenNode)e.nextElement());
+		}
     }
 
+    // jk: only set the parent relation here
     private void setRelations(CgenNode nd) {
 	CgenNode parent = (CgenNode)probe(nd.getParent());
 	nd.setParentNd(parent);
@@ -446,28 +453,30 @@ class CgenClassTable extends SymbolTable {
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
 	nds = new Vector();
-
+	// dispTbls = new HashMap<AbstractSymbol, ArrayList<methodName>>();
 	this.str = str;
 
 	// jk: modified classtag here
 	stringclasstag = 4;
 	// ((CgenNode)this.lookup(TreeConstants.Str)).getClassTag(); 
 	/* Change to your String class tag here */;
-	intclasstag = 3;
+	intclasstag = 2;
 	// ((CgenNode)this.lookup(TreeConstants.Int)).getClassTag(); 
 	/* Change to your Int class tag here */;
-	boolclasstag = 5;
+	boolclasstag = 3;
 	// ((CgenNode)this.lookup(TreeConstants.Bool)).getClassTag();
 	/* Change to your Bool class tag here */;
 
 	enterScope();  // enter scope
 
-	if (Flags.cgen_debug) System.out.println("Building CgenClassTable");
+	if (Flags.cgen_debug) 
+		System.out.println("Building CgenClassTable");
 	
 	// jk: for building inheritance graph
 	installBasicClasses();
 	installClasses(cls);
 	buildInheritanceTree();
+	setClassTags();
 
 	code();
 
@@ -488,7 +497,6 @@ class CgenClassTable extends SymbolTable {
 	if (Flags.cgen_debug) System.out.println("coding constants");
 
 	codeConstants();  // third: constants
-	CgenSupport.emitDispTableRef(TreeConstants.Str, str);
 	//                 Add your code to emit
 	//                   - prototype objects
 	//                   - class_nameTab
