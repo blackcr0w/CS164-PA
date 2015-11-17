@@ -40,6 +40,7 @@ class StringSymbol extends AbstractSymbol {
      * */
     public void codeDef(int stringclasstag, PrintStream s) {
 	IntSymbol lensym = (IntSymbol)AbstractTable.inttable.addInt(str.length());
+    // first: add the int of string into int table
 	
 	// Add -1 eye catcher
 	s.println(CgenSupport.WORD + "-1");
@@ -48,13 +49,11 @@ class StringSymbol extends AbstractSymbol {
 	s.println(CgenSupport.WORD + (CgenSupport.DEFAULT_OBJFIELDS +
 				      CgenSupport.STRING_SLOTS +
 				      (str.length() + 4) / 4)); // object size
-	s.print(CgenSupport.WORD);
-
+	s.print(CgenSupport.WORD); s.println("String_dispTab");        // dispatch table
 	/* Add code to reference the dispatch table for class String here */
 
-	s.println("String_dispTab");		// dispatch table
-	s.print(CgenSupport.WORD); lensym.codeRef(s); s.println(""); // length
-	CgenSupport.emitStringConstant(str, s); // ascii string
+	s.print(CgenSupport.WORD); lensym.codeRef(s); s.println(""); // length, ".word  int_const2"
+	CgenSupport.emitStringConstant(str, s); // ascii string, the name of the string1
 	s.print(CgenSupport.ALIGN); // align to word
     }
 

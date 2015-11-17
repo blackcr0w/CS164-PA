@@ -61,6 +61,7 @@ class IntSymbol extends AbstractSymbol {
     public void codeRef(PrintStream s) {
 	s.print(CgenSupport.INTCONST_PREFIX + index);
     }
+    // using the index to get the const number of the int const
 
     /** Returns a copy of this symbol */
     public Object clone() {

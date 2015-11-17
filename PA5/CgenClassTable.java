@@ -24,6 +24,7 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 
 /** This class is used for representing the inheritance tree during code
     generation. You will need to fill in some of its methods and
@@ -39,7 +40,39 @@ class CgenClassTable extends SymbolTable {
     private int stringclasstag;
     private int intclasstag;
     private int boolclasstag;
+    private CgenNode currentClass;
+    private int currentNameTag = 0;  // jk: counter for class tag, changeName
 
+    ////////////////////////
+    //LinkedHashMap of CgenNodes in the order they're assigned to classTa; map node name to node
+    private LinkedHashMap<AbstractSymbol, CgenNode> taggedNodes = new LinkedHashMap<AbstractSymbol, CgenNode>();
+    //helper methods
+
+    // jk: this is used of OpSem, changeName
+    public CgenNode getCgenNode(AbstractSymbol name){
+      if(name.equals(TreeConstants.SELF_TYPE)) return currentClass;
+      CgenNode node = taggedNodes.get(name);
+      if(node == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode");
+      return node;
+    }
+
+    // set the current class's tag number, increase counter
+    public void setClassTagsHelper(CgenNode curNode) {
+    	curNode.setClassTag(currentNameTag);
+    	taggedNodes.put(curNode.getName(), curNode);  // jk; put <AbstractSymbol, CgenNode>
+    	currentNameTag++;
+    	// jk: dont know why add children
+    	for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
+            CgenNode child = (CgenNode)e.nextElement();
+            setClassTagsHelper(child);
+        }
+    }
+
+    // jk: dont know why set from the root()
+    public void setClassTags() {
+    	setClassTagsHelper(root());
+    }
+    /////////////////
 
     // The following methods emit code for constants and global
     // declarations.
@@ -147,7 +180,7 @@ class CgenClassTable extends SymbolTable {
 	AbstractTable.stringtable.addString("");
 	AbstractTable.inttable.addString("0");
 
-	// jk: emit str_const here
+	// jk: emit str_const here, str is the *current* stringx
 	AbstractTable.stringtable.codeStringTable(stringclasstag, str);
 
 	// jk: emit int_const here
@@ -155,7 +188,7 @@ class CgenClassTable extends SymbolTable {
 
 	codeBools(boolclasstag);
     }
-    
+
 // class_nameTab:
 // 	.word	str_const5
 // 	.word	str_const6
@@ -164,6 +197,8 @@ class CgenClassTable extends SymbolTable {
 // 	.word	str_const9
 // 	.word	str_const10
 
+// question: how to get the str_constX??
+// from the string name get the 
     private void codeClassNameTable() {
     	str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
     	// collect all class name and print them
@@ -175,10 +210,6 @@ class CgenClassTable extends SymbolTable {
     }    
 
     private void codePrototypeObjects() {
-    	return;
-    }
-
-    private void codeClassNameTable() {
     	return;
     }
 

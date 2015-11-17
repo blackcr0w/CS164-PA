@@ -40,6 +40,9 @@ class CgenNode extends class_c {
     
     /** Does this node correspond to a basic class? */
     private int basic_status;
+    
+    /** The class tag **/
+    private int tag;   
 
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
@@ -92,6 +95,15 @@ class CgenNode extends class_c {
     boolean basic() { 
 	return basic_status == Basic; 
     }
+
+    // jk: set the classTag of current class, changeName
+    void setClassTag(int classTag) {
+        if (this.tag != -1) {
+            Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
+        }
+        this.tag = classTag;
+    }
+
 }
     
 
