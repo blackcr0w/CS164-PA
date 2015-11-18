@@ -210,13 +210,21 @@ class CgenClassTable extends SymbolTable {
     		((StringSymbol) AbstractTable.stringtable.lookup(node.name.getString())).codeRef(str);
         	str.println();
     	}
-    }    
-
-    private void codePrototypeObjects() {
-    	return;
     }
 
     private void codeClassObjectTable() {
+    	str.print(CgenSupport.CLASSOBJTAB + CgenSupport.LABEL);
+    	for(CgenNode node: taggedNodes.values()) {
+    		str.print(CgenSupport.WORD);
+    		CgenSupport.emitProtObjRef(node.name, str);
+        	str.println();
+        	str.print(CgenSupport.WORD);
+    		CgenSupport.emitInitRef(node.name, str);
+    		str.println();
+    	}
+    }   
+
+    private void codePrototypeObjects() {
     	return;
     }
 
