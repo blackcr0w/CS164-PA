@@ -22,9 +22,10 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 // This is a project skeleton file
 	// str.println("jkdebug: 2"); 
 import java.io.PrintStream;
-import java.util.Vector;
-import java.util.Enumeration;
-import java.util.LinkedHashMap;
+import java.util.*;
+// import java.util.Vector;
+// import java.util.Enumeration;
+// import java.util.LinkedHashMap;
 
 /** This class is used for representing the inheritance tree during code
     generation. You will need to fill in some of its methods and
@@ -81,10 +82,14 @@ class CgenClassTable extends SymbolTable {
     	installAllClassFeaturesHelper(root(), new Vector<MethodNodePair>(), new Vector<attr>());
     }
 
+    // jk: set Attrs for every class:
+    // jk: first, set inherited attrs
+    // jk: seconde, set definded attrs
+    // there is no attrs for object class
     private void installAllClassFeaturesHelper(CgenNode curNode, Vector<MethodNodePair> inheritedMethods, Vector<attr> inheritedAttrs) {
     	curNode.setInheritedAttrs(inheritedAttrs);
     	Vector<MethodNodePair> curMethods = new Vector<MethodNodePair>(inheritedMethods);
-    	Vector<MethodNodePair> newMethods = new Vector<MethodNodePair>();//hold all locally defined methods
+    	Vector<MethodNodePair> newMethods = new Vector<MethodNodePair>(); //hold all locally defined methods
     	Vector<attr> localAttrs = new Vector<attr>(); //hold all locally defined attributes
     	for (Enumeration e = curNode.getFeatures().getElements(); e.hasMoreElements();) {
             Feature feature= ((Feature)e.nextElement());
@@ -290,6 +295,22 @@ class CgenClassTable extends SymbolTable {
     		}
     	}
     }
+
+    //emit default values of attributes in prototype objects
+    private void codeAttr(attr att) {
+    	str.print(CgenSupport.WORD);
+     	AbstractSymbol clas = att.type_decl;
+      	if(clas.equals(TreeConstants.Int)){
+        	((IntSymbol) AbstractTable.inttable.lookup("0")).codeRef(str);
+     	 } else if (clas.equals(TreeConstants.Bool)) {
+        	BoolConst.falsebool.codeRef(str);
+      	} else if (clas.equals(TreeConstants.Str)) {
+        	((StringSymbol) AbstractTable.stringtable.lookup("")).codeRef(str);
+      	} else {
+        	str.print(0); // void
+      	}
+      	str.println();
+    }    
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -519,6 +540,7 @@ class CgenClassTable extends SymbolTable {
 
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
+    	// jk: cls only constains the non-baisic classes
 	nds = new Vector();
 	// dispTbls = new HashMap<AbstractSymbol, ArrayList<methodName>>();
 	this.str = str;
@@ -544,6 +566,7 @@ class CgenClassTable extends SymbolTable {
 	installClasses(cls);
 	buildInheritanceTree();
 	setClassTags();
+	installAllClassFeatures();
 
 	code();
 
@@ -571,7 +594,7 @@ class CgenClassTable extends SymbolTable {
 	
 	codeClassNameTable();
 	codeClassObjectTable();
-	codeDispatchTbale();
+	codeDispatchTables();
 	codePrototypeObjects();
 
 	if (Flags.cgen_debug) System.out.println("coding global text");
