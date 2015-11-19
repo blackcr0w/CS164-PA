@@ -76,6 +76,48 @@ class CgenClassTable extends SymbolTable {
     }
     /////////////////
 
+    //perform depth-first search to install class methods and class attributes to each CgenNode.
+    private void installAllClassFeatures() {
+    	installAllClassFeaturesHelper(root(), new Vector<MethodNodePair>(), new Vector<attr>());
+    }
+
+    private void installAllClassFeaturesHelper(CgenNode curNode, Vector<MethodNodePair> inheritedMethods, Vector<attr> inheritedAttrs) {
+    	curNode.setInheritedAttrs(inheritedAttrs);
+    	Vector<MethodNodePair> curMethods = new Vector<MethodNodePair>(inheritedMethods);
+    	Vector<MethodNodePair> newMethods = new Vector<MethodNodePair>();//hold all locally defined methods
+    	Vector<attr> localAttrs = new Vector<attr>(); //hold all locally defined attributes
+    	for (Enumeration e = curNode.getFeatures().getElements(); e.hasMoreElements();) {
+            Feature feature= ((Feature)e.nextElement());
+            if (feature instanceof method) {
+                newMethods.add(new MethodNodePair(curNode, ((method)feature)));
+            } else if (feature instanceof attr) {
+                localAttrs.add(((attr)feature));
+            }
+        }
+
+        //we need to replace the inherited method with new locally-defined method. 
+        for (int i = 0; i < curMethods.size(); i++) {
+        	MethodNodePair met = curMethods.get(i);
+        	int position = newMethods.indexOf(met);
+             
+        	if (position != -1) {
+        		curMethods.set(i, newMethods.get(position));
+        		newMethods.remove(position);
+        	}
+        }
+        curMethods.addAll(newMethods);
+        curNode.setMethods(curMethods);
+        curNode.setLocalAttrs(localAttrs);
+
+        Vector<attr> allAttrs = curNode.getAllAttrs();
+        for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
+            CgenNode child = (CgenNode)e.nextElement();
+            installAllClassFeaturesHelper(child, curMethods, allAttrs);
+        }
+
+    }
+
+
     // The following methods emit code for constants and global
     // declarations.
 
@@ -224,12 +266,29 @@ class CgenClassTable extends SymbolTable {
     	}
     }   
 
+    private void codeDispatchTables() {
+    	for(CgenNode node: taggedNodes.values()){
+    		str.print(node.name.getString() + CgenSupport.DISPTAB_SUFFIX + CgenSupport.LABEL);
+    		for(MethodNodePair met : node.getMethods()){
+    			str.print(CgenSupport.WORD);
+    			CgenSupport.emitMethodRef(met.node.name, met.mt.name, str);
+    			str.println();
+    		}
+    	}
+    }    
     private void codePrototypeObjects() {
-    	return;
-    }
-
-    private void codeDispatchTbale() {
-    	return;
+    	for (CgenNode node: taggedNodes.values()) {
+    		str.println(CgenSupport.WORD + "-1");
+    		str.print(node.name.getString() + CgenSupport.PROTOBJ_SUFFIX  + CgenSupport.LABEL);
+    		str.println(CgenSupport.WORD + node.getClassTag());
+    		Vector<attr> allAttrs = node.getAllAttrs();
+    		int objSize = 3 + allAttrs.size();
+    		str.println(CgenSupport.WORD + objSize);
+    		str.println(CgenSupport.WORD + node.name.getString() + CgenSupport.DISPTAB_SUFFIX);
+    		for (attr att: allAttrs) {
+    			codeAttr(att);
+    		}
+    	}
     }
 
     /** Creates data structures representing basic Cool classes (Object,

@@ -25,6 +25,23 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
 
+//MethodNodePair class stores the CgenNode where the method is textually defined and the method definition
+class MethodNodePair {
+    CgenNode node;
+    method mt;
+
+    public MethodNodePair(CgenNode node, method mt) {
+        this.node = node;
+        this.mt = mt;
+    }
+
+    //to use by Vector.indexOf method to test for equality in CgenClassTable.installAllClassFeaturesHelper
+    public boolean equals(Object o){
+        return o instanceof MethodNodePair && mt.name.equals(((MethodNodePair) o).mt.name);
+    }
+
+}
+
 class CgenNode extends class_c {
     /** The parent of this node in the inheritance tree */
     private CgenNode parent;
