@@ -93,6 +93,7 @@ abstract class AbstractTable {
 
     /** Vector of table entries */
     protected Vector tbl = new Vector();
+    // jk: tbl is the body of table
 
     /** Creates a new symbol of the appropriate type */
     protected abstract AbstractSymbol getNewSymbol(String s, 
@@ -107,6 +108,7 @@ abstract class AbstractTable {
     public AbstractSymbol addString(String s, int maxchars) {
 	int len = Math.min(s.length(), maxchars);
 	AbstractSymbol sym = null;
+    // first: search table
 	for (int i = 0; i < tbl.size(); i++) {
 	    try {
 		sym = (AbstractSymbol)tbl.elementAt(i);

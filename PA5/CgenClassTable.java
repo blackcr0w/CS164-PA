@@ -54,6 +54,11 @@ class CgenClassTable extends SymbolTable {
     private int boolclasstag;
     private CgenNode currentClass;
     private int currentNameTag = 0;  // jk: counter for class tag, changeName
+    //counter for the next available label number
+    private int currentLabel = -1;
+    //records the distance(in word) from sp to fp; used to keep track of the next available stack location
+    private int spFromfp = 1;
+    //the current containing class; used for self_type
 
     ////////////////////////
     //LinkedHashMap of CgenNodes in the order they're assigned to classTa; map node name to node
@@ -674,6 +679,68 @@ class CgenClassTable extends SymbolTable {
     public CgenNode root() {
 	return (CgenNode)probe(TreeConstants.Object_);
     }
+
+ 	//get the next available label number
+    public int nextLabel(){
+      currentLabel++;
+      return currentLabel;
+    }
+
+    public void setCurrentClass(CgenNode node){
+      currentClass = node;
+    }
+
+    public CgenNode getCurrentClass(){
+      if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass");
+      return currentClass;
+    }
+
+    //called on method entrance; set spFromfp to 1
+    public void resetSpFromFp(){
+      spFromfp = 1;
+    }
+
+    //get the next available stack location offset relative to fp; stack grows to lower address, so this method returns a negative number
+    public int getSpFromFp(){
+      return -spFromfp;
+    }
+
+    //push the content in reg to stack; increase spFromfp accordingly
+    public void emitPush(String reg, PrintStream s) {
+      spFromfp++;
+      CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
+    }
+
+   //pop the counter number of arguments from stack; decrease spFromfp accordingly
+    public void emitPop(PrintStream s, int counter) {
+      spFromfp = spFromfp - counter;
+      if(spFromfp < 1) Utilities.fatalError("sp same or below fp in method call; pop too much in CgenClassTable.emitPop");
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4 * counter, s);
+ 
+    }
+
+    //store default value of clas into destRegister; used in let variable initialization
+    public void emitStoreDefaultValue(String destRegister, AbstractSymbol clas, PrintStream str){
+      if(clas.equals(TreeConstants.Int)) {
+        IntSymbol defaultInt = (IntSymbol) AbstractTable.inttable.lookup("0");
+        CgenSupport.emitLoadInt(destRegister, defaultInt, str);
+      } else if (clas.equals(TreeConstants.Bool)) {
+        CgenSupport.emitLoadBool(destRegister, BoolConst.falsebool, str);
+      } else if (clas.equals(TreeConstants.Str)) {
+        StringSymbol defaultString = (StringSymbol) AbstractTable.stringtable.lookup("");
+        CgenSupport.emitLoadString(destRegister, defaultString, str);
+      } else {
+        CgenSupport.emitMove(destRegister, CgenSupport.ZERO, str); // void
+      }
+    }
+
+    //pop the top of stack into destRegister; decrease spFromfp accordingly
+    public void emitPopFromTop(String destRegister, PrintStream s) {
+      CgenSupport.emitLoad(destRegister, 1, CgenSupport.SP, s);
+      emitPop(s, 1);
+    }
+
 }
 			  
     

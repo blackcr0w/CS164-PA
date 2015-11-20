@@ -11,6 +11,10 @@
 import java.util.Enumeration;
 import java.io.PrintStream;
 import java.util.Vector;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Comparator;
 
 
 /** Defines simple phylum Program */
@@ -155,7 +159,7 @@ abstract class Expression extends TreeNode {
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
     }
-    public abstract void code(PrintStream s);
+    public abstract void code(PrintStream s, CgenClassTable context);
 
 }
 
@@ -251,34 +255,34 @@ class programc extends Program {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_program");
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
-	    ((Class_)e.nextElement()).dump_with_types(out, n + 2);
+        ((Class_)e.nextElement()).dump_with_types(out, n + 2);
         }
     }
     /** This method is the entry point to the semantic checker.  You will
         need to complete it in programming assignment 4.
-	<p>
+    <p>
         Your checker should do the following two things:
-	<ol>
-	<li>Check that the program is semantically correct
-	<li>Decorate the abstract syntax tree with type information
+    <ol>
+    <li>Check that the program is semantically correct
+    <li>Decorate the abstract syntax tree with type information
         by setting the type field in each Expression node.
         (see tree.h)
-	</ol>
-	<p>
-	You are free to first do (1) and make sure you catch all semantic
-    	errors. Part (2) can be done in a second stage when you want
-	to test the complete compiler.
+    </ol>
+    <p>
+    You are free to first do (1) and make sure you catch all semantic
+        errors. Part (2) can be done in a second stage when you want
+    to test the complete compiler.
     */
     public void semant() {
-	/* ClassTable constructor may do some semantic analysis */
-	ClassTable classTable = new ClassTable(classes);
-	
-	/* some semantic analysis code may go here */
+    /* ClassTable constructor may do some semantic analysis */
+    ClassTable classTable = new ClassTable(classes);
+    
+    /* some semantic analysis code may go here */
 
-	if (classTable.errors()) {
-	    System.err.println("Compilation halted due to static semantic errors.");
-	    System.exit(1);
-	}
+    if (classTable.errors()) {
+        System.err.println("Compilation halted due to static semantic errors.");
+        System.exit(1);
+    }
     }
     /** This method is the entry point to the code generator.  All of the work
       * of the code generator takes place within CgenClassTable constructor.
@@ -286,7 +290,16 @@ class programc extends Program {
       * @see CgenClassTable
       * */
     public void cgen(PrintStream s) {
-	CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
+        CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
+        //self is always stored in $s0
+        StackLocation selfLoc = new StackLocation(CgenSupport.SELF, 0);
+        codegen_classtable.enterScope();
+        codegen_classtable.addId(TreeConstants.self, selfLoc);
+        for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
+            class_c c = ((class_c)e.nextElement()); 
+            c.code(s, codegen_classtable);  
+        }
+        codegen_classtable.exitScope();
     }
 
 }
@@ -336,7 +349,7 @@ class class_c extends Class_ {
         Utilities.printEscapedString(out, filename.getString());
         out.println("\"\n" + Utilities.pad(n + 2) + "(");
         for (Enumeration e = features.getElements(); e.hasMoreElements();) {
-	    ((Feature)e.nextElement()).dump_with_types(out, n + 2);
+        ((Feature)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
     }
@@ -344,6 +357,27 @@ class class_c extends Class_ {
     public AbstractSymbol getParent()   { return parent; }
     public AbstractSymbol getFilename() { return filename; }
     public Features getFeatures()       { return features; }
+
+    public void code(PrintStream s, CgenClassTable context) {
+        context.enterScope();
+        CgenNode cnode = context.getCgenNode(name);
+        context.setCurrentClass(cnode);
+        Vector<attr> attrs = cnode.getAllAttrs();
+        //attributes are referenced through SELF register
+        for (int i = 0; i < attrs.size(); i++) {
+            StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i);
+            context.addId(attrs.get(i).name, newLoc);
+        }
+
+        Vector<MethodNodePair> localDefinedMethods = cnode.getLocalDefinedMethods();
+        //emit code for locally-defined(including overriden) methods
+        for (MethodNodePair met: localDefinedMethods) {
+            s.print(name.getString() + CgenSupport.METHOD_SEP+ met.mt.name.getString() + CgenSupport.LABEL);
+            met.mt.code(s,context);
+        }
+        context.setCurrentClass(null);
+        context.exitScope();
+    }
 
 }
 
@@ -388,10 +422,36 @@ class method extends Feature {
         out.println(Utilities.pad(n) + "_method");
         dump_AbstractSymbol(out, n + 2, name);
         for (Enumeration e = formals.getElements(); e.hasMoreElements();) {
-	    ((Formal)e.nextElement()).dump_with_types(out, n + 2);
+        ((Formal)e.nextElement()).dump_with_types(out, n + 2);
         }
         dump_AbstractSymbol(out, n + 2, return_type);
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
+    }
+
+    public void code(PrintStream s, CgenClassTable context) {
+        context.enterScope();
+        for (int i = 0; i < formals.getLength(); i++) {
+            //parameters are referenced through fp; fp points to ra; first argument is highest on the stack
+            StackLocation formalLocation = new StackLocation(CgenSupport.FP, formals.getLength() - i + 2);
+            context.addId(((formalc)formals.getNth(i)).name, formalLocation);
+        }
+
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, s);
+        CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, s); //store old fp
+        CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, s); //store old self
+        CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, s); //store return address
+        //enter the method body
+        context.resetSpFromFp();
+        //fp points to the ra
+        CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, s);
+        CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, s); //update SELF to reference the dispatch object
+        expr.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, s); //restore old fp
+        CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, s); //restore old self
+        CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, s); //restore old return address
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12 + 4 * formals.getLength(), s); //pop all arguments and old fp, self and return address off stack
+        CgenSupport.emitReturn(s);
+        context.exitScope();
     }
 
 }
@@ -433,7 +493,7 @@ class attr extends Feature {
         out.println(Utilities.pad(n) + "_attr");
         dump_AbstractSymbol(out, n + 2, name);
         dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
+    init.dump_with_types(out, n + 2);
     }
 
 }
@@ -512,9 +572,36 @@ class branch extends Case {
         out.println(Utilities.pad(n) + "_branch");
         dump_AbstractSymbol(out, n + 2, name);
         dump_AbstractSymbol(out, n + 2, type_decl);
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
     }
 
+    public void code(PrintStream s, CgenClassTable context, Set<CgenNode> possibleExprTypes, int endLabel) {
+        Set<CgenNode> validTypes = context.getCgenNode(type_decl).getAllDescendants(); 
+        validTypes.retainAll(possibleExprTypes); //get all possible types in this branch which could match the run-time type of case variable 
+        int branchBody = context.nextLabel();
+        int nextBranch = context.nextLabel();
+
+        for(CgenNode guess : validTypes){
+            CgenSupport.emitLoadImm(CgenSupport.T1, guess.getClassTag(), s);
+            //class tag of case variable is always in T4 as long as no branch has been taken yet
+            CgenSupport.emitBeq(CgenSupport.T1, CgenSupport.T4, branchBody, s);
+        }
+
+        CgenSupport.emitBranch(nextBranch, s);
+        if (validTypes.size() > 0) {
+            CgenSupport.emitLabelDef(branchBody, s);
+            StackLocation branchVariableLocation = new StackLocation(CgenSupport.FP, context.getSpFromFp());
+            context.emitPush(CgenSupport.ACC, s); 
+            context.enterScope();
+            context.addId(name, branchVariableLocation); //bind case variable to the declared name of this branch
+            expr.code(s, context);
+            context.exitScope();
+            context.emitPop(s, 1);
+            CgenSupport.emitBranch(endLabel, s);
+        }
+        CgenSupport.emitLabelDef(nextBranch, s); //In runtime, the type of case variable matches none of the possible types under this branch; go to next branch
+
+    }
 }
 
 
@@ -549,15 +636,23 @@ class assign extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_assign");
         dump_AbstractSymbol(out, n + 2, name);
-	expr.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    expr.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        expr.code(s, context);
+        StackLocation variableLocation = (StackLocation) context.lookup(name); //get the location where the assignment variable is stored
+        CgenSupport.emitStore(CgenSupport.ACC, variableLocation.offset, variableLocation.baseRegister, s); //update the value of the assignment variable
+        //if the garbage collector is turned on, it should be notified the assignment of an attribute
+        if((Flags.cgen_Memmgr == 1) && (variableLocation.baseRegister.equals(CgenSupport.SELF))) {
+            CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * (variableLocation.offset), s);
+            CgenSupport.emitGCAssign(s);   
+        }
     }
 
 
@@ -602,22 +697,43 @@ class static_dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_static_dispatch");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, type_name);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -(4 * actual.getLength()), s);
+        //first argument is stored at the highest address
+        for (int i = 0; i < actual.getLength(); i++) {
+            ((Expression)actual.getNth(i)).code(s, context);
+            CgenSupport.emitStore(CgenSupport.ACC, actual.getLength() - i, CgenSupport.SP, s);
+        }
+        expr.code(s, context);
+        int nonVoid = context.nextLabel();
+        //test for void dispatch object
+        CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
+        CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
+        CgenSupport.emitJal("_dispatch_abort", s);
+
+        CgenSupport.emitLabelDef(nonVoid, s);
+        //load dispatch table of static dispatch type
+        CgenSupport.emitLoadAddress(CgenSupport.T1, type_name.getString() + CgenSupport.DISPTAB_SUFFIX, s);
+        //load method reference
+        CgenSupport.emitLoad(CgenSupport.T1, context.getCgenNode(type_name).getMethodOffset(name),CgenSupport.T1, s);
+        CgenSupport.emitJalr(CgenSupport.T1, s);
     }
 
 
@@ -658,21 +774,44 @@ class dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_dispatch");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -(4 * actual.getLength()), s);
+        //first argument is stored at the highest address
+        for (int i = 0; i < actual.getLength(); i++) {
+            ((Expression)actual.getNth(i)).code(s, context);
+            CgenSupport.emitStore(CgenSupport.ACC, actual.getLength() - i, CgenSupport.SP, s);
+        }
+
+        expr.code(s, context);
+        //test for void dispatch object
+        int nonVoid = context.nextLabel();
+        CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
+        CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
+        CgenSupport.emitJal("_dispatch_abort", s);
+
+        CgenSupport.emitLabelDef(nonVoid, s);
+        //load dispatch table of dispatch object
+        CgenSupport.emitLoad(CgenSupport.T1, CgenSupport.DISPTABLE_OFFSET, CgenSupport.ACC, s);
+        //load method reference
+        CgenSupport.emitLoad(CgenSupport.T1, context.getCgenNode(expr.get_type()).getMethodOffset(name),CgenSupport.T1, s);
+        CgenSupport.emitJalr(CgenSupport.T1, s);
+
     }
 
 
@@ -713,17 +852,30 @@ class cond extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_cond");
-	pred.dump_with_types(out, n + 2);
-	then_exp.dump_with_types(out, n + 2);
-	else_exp.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    pred.dump_with_types(out, n + 2);
+    then_exp.dump_with_types(out, n + 2);
+    else_exp.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        int elseBranch = context.nextLabel();
+        int end = context.nextLabel();
+
+        pred.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        //test if predicate evaluates to false
+        CgenSupport.emitBeqz(CgenSupport.T1, elseBranch, s);
+        then_exp.code(s, context);
+        CgenSupport.emitBranch(end, s);
+        CgenSupport.emitLabelDef(elseBranch, s);
+        else_exp.code(s, context);
+        CgenSupport.emitLabelDef(end, s);
+
     }
 
 
@@ -760,16 +912,28 @@ class loop extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_loop");
-	pred.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    pred.dump_with_types(out, n + 2);
+    body.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        int loop = context.nextLabel();
+        int end = context.nextLabel();
+        CgenSupport.emitLabelDef(loop, s);
+        pred.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        //test if predicate evaluates to false
+        CgenSupport.emitBeqz(CgenSupport.T1, end, s);
+        body.code(s, context);
+        CgenSupport.emitBranch(loop, s);
+        CgenSupport.emitLabelDef(end, s);
+        CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.ZERO, s);//while loop returns a void object
+
     }
 
 
@@ -806,18 +970,55 @@ class typcase extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_typcase");
-	expr.dump_with_types(out, n + 2);
+    expr.dump_with_types(out, n + 2);
         for (Enumeration e = cases.getElements(); e.hasMoreElements();) {
-	    ((Case)e.nextElement()).dump_with_types(out, n + 2);
+        ((Case)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+
+    //sortBranches by decreasing order, therefore branches with tighter type binding(children) appears earlier than branches with looser type binding(parent) in code
+    //need final declaration to pass context into Comparator definition
+    private void sortBranches(ArrayList<branch> branches, final CgenClassTable context) {
+        Collections.sort(branches, new Comparator<branch>() {
+            public int compare(branch first, branch second){
+                CgenNode f = context.getCgenNode(first.type_decl);
+                CgenNode s = context.getCgenNode(second.type_decl);
+                return s.getClassTag() - f.getClassTag();
+            }
+        });
+    }
+
+    public void code(PrintStream s, CgenClassTable context) {
+        ArrayList<branch> branches = (ArrayList<branch>) Collections.list(cases.getElements());
+        sortBranches(branches, context);
+        expr.code(s,context);
+        int nonVoid = context.nextLabel();
+        //jump to _case_abort2 if case variable evaluates to void; or else continue case evaluation
+        CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
+        CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
+        CgenSupport.emitJal("_case_abort2", s);
+
+        CgenSupport.emitLabelDef(nonVoid, s);
+        //load class tag of case variable
+        CgenSupport.emitLoad(CgenSupport.T4, 0, CgenSupport.ACC, s);
+        int end = context.nextLabel();
+        //get all possible run-time types of case variable
+        Set<CgenNode> possibleExprTypes = context.getCgenNode(expr.get_type()).getAllDescendants();
+        for (branch b: branches) {
+            b.code(s, context, possibleExprTypes, end);
+        }
+        //if no branch is taken, just up _case_abort; accumulator already contains the case variable
+        CgenSupport.emitJal("_case_abort", s);
+        CgenSupport.emitLabelDef(end, s);
+
     }
 
 
@@ -851,16 +1052,20 @@ class block extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_block");
         for (Enumeration e = body.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+        ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        for (Enumeration e = body.getElements(); e.hasMoreElements();) {
+            Expression ex = ((Expression)e.nextElement());
+            ex.code(s, context);
+        }
     }
 
 
@@ -905,18 +1110,30 @@ class let extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_let");
-	dump_AbstractSymbol(out, n + 2, identifier);
-	dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, identifier);
+    dump_AbstractSymbol(out, n + 2, type_decl);
+    init.dump_with_types(out, n + 2);
+    body.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        if(!(init instanceof no_expr)) {
+            init.code(s, context);
+        } else {
+            context.emitStoreDefaultValue(CgenSupport.ACC, type_decl, s); //if no initialization is provided, initialize let variable with default value
+        }
+        StackLocation letVariableLocation = new StackLocation(CgenSupport.FP, context.getSpFromFp());
+        context.emitPush(CgenSupport.ACC, s);
+        context.enterScope();
+        context.addId(identifier, letVariableLocation); //create let variable binding
+        body.code(s, context);
+        context.emitPop(s, 1);
+        context.exitScope();
     }
 
 
@@ -953,16 +1170,28 @@ class plus extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_plus");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s); 
+        e2.code(s, context);
+        CgenSupport.emitJal("Object.copy", s);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 value into T2; copy has the same value as the original 
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 value into T1
+
+        CgenSupport.emitAdd(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //store result into new int's value attr
     }
 
 
@@ -999,16 +1228,29 @@ class sub extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_sub");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitJal("Object.copy", s);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 value into T2; copy has the same value as the original
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 value into T1
+
+        CgenSupport.emitSub(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //store result into new int's value attr
     }
 
 
@@ -1045,16 +1287,29 @@ class mul extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_mul");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitJal("Object.copy", s);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 value into T2; copy has the same value as the original
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 value into T1
+
+        CgenSupport.emitMul(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //store result into new int's value attr
     }
 
 
@@ -1091,16 +1346,28 @@ class divide extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_divide");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitJal("Object.copy", s);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s); //load e2 value into T2; copy has the same value as the original
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 value into T1
+
+        CgenSupport.emitDiv(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //store result into new int's value attr
     }
 
 
@@ -1133,15 +1400,21 @@ class neg extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_neg");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitJal("Object.copy", s); //make a copy of the original object
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s); //load the original value
+        CgenSupport.emitNeg(CgenSupport.T1, CgenSupport.T1, s); //negate value
+        CgenSupport.emitStore(CgenSupport.T1, 3, CgenSupport.ACC, s); //store new value back
+
     }
 
 
@@ -1178,16 +1451,30 @@ class lt extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_lt");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s);
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 value into T1
+
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s); //load the true bool into accumulator; if blt evaluates to true, we will already have true bool in a0
+        int end = context.nextLabel();
+        CgenSupport.emitBlt(CgenSupport.T1, CgenSupport.T2, end, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s); //if blt evaluates to false, we need to load false bool into a0
+
+        CgenSupport.emitLabelDef(end, s);
     }
 
 
@@ -1224,16 +1511,29 @@ class eq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_eq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitMove(CgenSupport.T2, CgenSupport.ACC, s);
+        context.emitPopFromTop(CgenSupport.T1, s);
+
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s);//load the true bool into accumulator; if beq evaluates to true, we will already have true bool in a0
+        int end = context.nextLabel();
+        CgenSupport.emitBeq(CgenSupport.T1, CgenSupport.T2, end, s);
+        CgenSupport.emitLoadBool(CgenSupport.A1, BoolConst.falsebool, s); //load false bool to a1; prepare to call equality test; equality test will move false bool to a0 on return
+        CgenSupport.emitJal("equality_test", s);
+        
+        CgenSupport.emitLabelDef(end, s);
     }
 
 
@@ -1270,16 +1570,30 @@ class leq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_leq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    e2.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        context.emitPush(CgenSupport.ACC, s);
+        e2.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T2, 3, CgenSupport.ACC, s);
+
+        context.emitPopFromTop(CgenSupport.T1, s); //pop e1 Int object off stack into T1
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.T1, s); //load e1 VALUE into T1
+
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s); //load the true bool into accumulator; if bleq evaluates to true, we will already have true bool in a0
+        int end = context.nextLabel();
+        CgenSupport.emitBleq(CgenSupport.T1, CgenSupport.T2, end, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s); //if bleq evaluates to false, we need to load false bool into a0
+
+        CgenSupport.emitLabelDef(end, s);
     }
 
 
@@ -1312,15 +1626,24 @@ class comp extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_comp");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.T1, 3, CgenSupport.ACC, s);
+        int end = context.nextLabel();
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s); //if e1 evaluates to false bool, we should return true bool in a0
+        CgenSupport.emitBeqz(CgenSupport.T1, end, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s); //if e1 evaluates to true bool, we should return false bool in a0
+
+        CgenSupport.emitLabelDef(end, s);
+
     }
 
 
@@ -1353,15 +1676,15 @@ class int_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_int");
-	dump_AbstractSymbol(out, n + 2, token);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, token);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
-	CgenSupport.emitLoadInt(CgenSupport.ACC,
+    public void code(PrintStream s, CgenClassTable context) {
+    CgenSupport.emitLoadInt(CgenSupport.ACC,
                                 (IntSymbol)AbstractTable.inttable.lookup(token.getString()), s);
     }
 
@@ -1394,15 +1717,15 @@ class bool_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_bool");
-	dump_Boolean(out, n + 2, val);
-	dump_type(out, n);
+    dump_Boolean(out, n + 2, val);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
-	CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
+    public void code(PrintStream s, CgenClassTable context) {
+    CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
     }
 
 }
@@ -1434,17 +1757,17 @@ class string_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_string");
-	out.print(Utilities.pad(n + 2) + "\"");
-	Utilities.printEscapedString(out, token.getString());
-	out.println("\"");
-	dump_type(out, n);
+    out.print(Utilities.pad(n + 2) + "\"");
+    Utilities.printEscapedString(out, token.getString());
+    out.println("\"");
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
-	CgenSupport.emitLoadString(CgenSupport.ACC,
+    public void code(PrintStream s, CgenClassTable context) {
+    CgenSupport.emitLoadString(CgenSupport.ACC,
                                    (StringSymbol)AbstractTable.stringtable.lookup(token.getString()), s);
     }
 
@@ -1477,15 +1800,48 @@ class new_ extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_new");
-	dump_AbstractSymbol(out, n + 2, type_name);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, type_name);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        if (type_name.equals(TreeConstants.SELF_TYPE)) {
+            //load the address of class object table
+            CgenSupport.emitLoadAddress(CgenSupport.T1, CgenSupport.CLASSOBJTAB, s);
+            //load the class tag of self object
+            CgenSupport.emitLoad(CgenSupport.T2, CgenSupport.TAG_OFFSET, CgenSupport.SELF, s);
+
+            //multiply the class tag by 8 to get offset of prototype object in class object table
+            CgenSupport.emitSll(CgenSupport.T2, CgenSupport.T2, 3, s);
+            //add offset to the starting address of class object table
+            CgenSupport.emitAddu(CgenSupport.T1, CgenSupport.T1, CgenSupport.T2, s);
+            //push the absolute address of prototype object to stack
+            context.emitPush(CgenSupport.T1, s);
+            //load the prototype object into accumulator
+            CgenSupport.emitLoad(CgenSupport.ACC, 0, CgenSupport.T1, s);
+            //make a copy of the prototype object
+            CgenSupport.emitJal("Object.copy", s);
+            //pop absolute address of prototype object to stack
+            context.emitPopFromTop(CgenSupport.T1, s);
+            //load initialization function from absolute address of prototype object + 4
+            CgenSupport.emitLoad(CgenSupport.T1, 1, CgenSupport.T1, s);
+            //the prototype object is still in accumulator; jump to initialization function
+            CgenSupport.emitJalr(CgenSupport.T1, s);
+
+        } else {
+            //load prototype object into a0
+            CgenSupport.emitLoadAddress(CgenSupport.ACC, type_name + CgenSupport.PROTOBJ_SUFFIX, s);
+            //prototype object is in a0, call Object.copy to make a copy.
+            CgenSupport.emitJal("Object.copy", s);
+            //initialize the copy in a0
+            CgenSupport.emitJal(type_name + CgenSupport.CLASSINIT_SUFFIX, s);
+        }
+
+
     }
 
 
@@ -1518,15 +1874,24 @@ class isvoid extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_isvoid");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+    e1.dump_with_types(out, n + 2);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        e1.code(s, context);
+        CgenSupport.emitMove(CgenSupport.T1, CgenSupport.ACC, s);
+        int end = context.nextLabel();
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.truebool, s); //if e1 evaluates to void, we return true bool in a0
+        CgenSupport.emitBeqz(CgenSupport.T1, end, s);
+        CgenSupport.emitLoadBool(CgenSupport.ACC, BoolConst.falsebool, s); //if e1 evaluates to non-void, we return false bool in a0
+
+        CgenSupport.emitLabelDef(end, s);
+
     }
 
 
@@ -1555,14 +1920,14 @@ class no_expr extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_no_expr");
-	dump_type(out, n);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
     }
 
 
@@ -1595,18 +1960,23 @@ class object extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_object");
-	dump_AbstractSymbol(out, n + 2, name);
-	dump_type(out, n);
+    dump_AbstractSymbol(out, n + 2, name);
+    dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
       * */
-    public void code(PrintStream s) {
+    public void code(PrintStream s, CgenClassTable context) {
+        if (name.equals(TreeConstants.self)) {
+            CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s); //move SELF object to accumulator
+        } else {
+            StackLocation variableLocation = (StackLocation) context.lookup(name);
+            CgenSupport.emitLoad(CgenSupport.ACC, variableLocation.offset, variableLocation.baseRegister, s); 
+        }
     }
 
 
 }
-
 
