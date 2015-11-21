@@ -34,18 +34,18 @@ class StringSymbol extends AbstractSymbol {
     /** Generates code for the string constant definition.  This method
      * is incomplete; you get to finish it up in programming assignment
      * 5.
-     * @param stringclasstag the class tag for string object
+     * @param stringClassTag the class tag for string object
      * @param s the output stream
      *
      * */
-    public void codeDef(int stringclasstag, PrintStream s) {
+    public void codeDef(int stringClassTag, PrintStream s) {
 	IntSymbol lensym = (IntSymbol)AbstractTable.inttable.addInt(str.length());
     // first: add the int of string into int table
 	
 	// Add -1 eye catcher
 	s.println(CgenSupport.WORD + "-1");
 	codeRef(s); s.print(CgenSupport.LABEL); // label
-	s.println(CgenSupport.WORD + stringclasstag); // tag
+	s.println(CgenSupport.WORD + stringClassTag); // tag
 	s.println(CgenSupport.WORD + (CgenSupport.DEFAULT_OBJFIELDS +
 				      CgenSupport.STRING_SLOTS +
 				      (str.length() + 4) / 4)); // object size

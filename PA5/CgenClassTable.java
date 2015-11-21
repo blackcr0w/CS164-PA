@@ -27,13 +27,13 @@ import java.util.*;
 // import java.util.Enumeration;
 // import java.util.LinkedHashMap;
 
-//StackLocation class is used to store the correct location to retrieve an attribute, a method argument and a temporary variable.
-class StackLocation {
-	public String baseRegister;
+//StackLoc class is used to store the correct location to retrieve an attribute, a method argument and a temporary variable.
+class StackLoc {
+	public String regBase;
 	public int offset;
 
-    public StackLocation(String reg, int off){
-        baseRegister = reg; 
+    public StackLoc(String reg, int off){
+        regBase = reg; 
         offset = off;
     }
 }
@@ -49,25 +49,25 @@ class CgenClassTable extends SymbolTable {
     /** This is the stream to which assembly instructions are output */
     private PrintStream str;
 
-    private int stringclasstag;
-    private int intclasstag;
-    private int boolclasstag;
-    private CgenNode currentClass;
-    private int currentNameTag = 0;  // jk: counter for class tag, changeName
+    private int stringClassTag;
+    private int intClassTag;
+    private int boolClassTag;
+    private CgenNode currClass;
+    private int currClassNameTag = 0;  // jk: counter for class tag, changeName
     //counter for the next available label number
-    private int currentLabel = -1;
+    private int currLabel = -1;
     //records the distance(in word) from sp to fp; used to keep track of the next available stack location
     private int spFromfp = 1;
     //the current containing class; used for self_type
 
     ////////////////////////
-    //LinkedHashMap of CgenNodes in the order they're assigned to classTa; map node name to node
+    // a LinkedHashMap of CgenNodes in the order they're assigned to classTa; map node name to node
     private LinkedHashMap<AbstractSymbol, CgenNode> taggedNodes = new LinkedHashMap<AbstractSymbol, CgenNode>();
     //helper methods
 
     // jk: this is used of OpSem, changeName
     public CgenNode getCgenNode(AbstractSymbol name){
-      if(name.equals(TreeConstants.SELF_TYPE)) return currentClass;
+      if(name.equals(TreeConstants.SELF_TYPE)) return currClass;
       CgenNode node = taggedNodes.get(name);
       if(node == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode");
       return node;
@@ -77,9 +77,9 @@ class CgenClassTable extends SymbolTable {
     // jk: object = 0
     public void setClassTagsHelper(CgenNode curNode) {
     	// jk: pass in the root node: object
-    	curNode.setClassTag(currentNameTag);
+    	curNode.setClassTag(currClassNameTag);
     	taggedNodes.put(curNode.getName(), curNode);  // jk; put <AbstractSymbol, CgenNode>
-    	currentNameTag++;
+    	currClassNameTag++;
     	// jk: dont know why add children
     	for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
             CgenNode child = (CgenNode)e.nextElement();
@@ -91,9 +91,8 @@ class CgenClassTable extends SymbolTable {
     public void setClassTags() {
     	setClassTagsHelper(root());
     }
-    /////////////////
 
-    //perform depth-first search to install class methods and class attributes to each CgenNode.
+    // depth-first search to install class methods and class attributes to each CgenNode.
     private void installAllClassFeatures() {
     	installAllClassFeaturesHelper(root(), new Vector<MethodNodePair>(), new Vector<attr>());
     }
@@ -146,39 +145,39 @@ class CgenClassTable extends SymbolTable {
      * declare the global names.
      * */
     private void codeGlobalData() {
-	// The following global names must be defined first.
+  	// The following global names must be defined first.
 
-	str.print("\t.data\n" + CgenSupport.ALIGN);
-	str.println(CgenSupport.GLOBAL + CgenSupport.CLASSNAMETAB);
-	str.print(CgenSupport.GLOBAL); 
-	CgenSupport.emitProtObjRef(TreeConstants.Main, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL); 
-	CgenSupport.emitProtObjRef(TreeConstants.Int, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL); 
-	CgenSupport.emitProtObjRef(TreeConstants.Str, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL); 
-	BoolConst.falsebool.codeRef(str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL); 
-	BoolConst.truebool.codeRef(str);
-	str.println("");
-	str.println(CgenSupport.GLOBAL + CgenSupport.INTTAG);
-	str.println(CgenSupport.GLOBAL + CgenSupport.BOOLTAG);
-	str.println(CgenSupport.GLOBAL + CgenSupport.STRINGTAG);
+  	str.print("\t.data\n" + CgenSupport.ALIGN);
+  	str.println(CgenSupport.GLOBAL + CgenSupport.CLASSNAMETAB);
+  	str.print(CgenSupport.GLOBAL); 
+  	CgenSupport.emitProtObjRef(TreeConstants.Main, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL); 
+  	CgenSupport.emitProtObjRef(TreeConstants.Int, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL); 
+  	CgenSupport.emitProtObjRef(TreeConstants.Str, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL); 
+  	BoolConst.falsebool.codeRef(str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL); 
+  	BoolConst.truebool.codeRef(str);
+  	str.println("");
+  	str.println(CgenSupport.GLOBAL + CgenSupport.INTTAG);
+  	str.println(CgenSupport.GLOBAL + CgenSupport.BOOLTAG);
+  	str.println(CgenSupport.GLOBAL + CgenSupport.STRINGTAG);
 
-	// We also need to know the tag of the Int, String, and Bool classes
-	// during code generation.
+  	// We also need to know the tag of the Int, String, and Bool classes
+  	// during code generation.
 
-	str.println(CgenSupport.INTTAG + CgenSupport.LABEL 
-		    + CgenSupport.WORD + intclasstag);
+  	str.println(CgenSupport.INTTAG + CgenSupport.LABEL 
+  		    + CgenSupport.WORD + intClassTag);
 
-	str.println(CgenSupport.BOOLTAG + CgenSupport.LABEL 
-		    + CgenSupport.WORD + boolclasstag);
-	str.println(CgenSupport.STRINGTAG + CgenSupport.LABEL 
-		    + CgenSupport.WORD + stringclasstag);
+  	str.println(CgenSupport.BOOLTAG + CgenSupport.LABEL 
+  		    + CgenSupport.WORD + boolClassTag);
+  	str.println(CgenSupport.STRINGTAG + CgenSupport.LABEL 
+  		    + CgenSupport.WORD + stringClassTag);
 
     }
 
@@ -190,7 +189,7 @@ class CgenClassTable extends SymbolTable {
     		enterScope();
      		Vector<attr> attrs = node.getAllAttrs();
      		for (int i = 0; i < attrs.size(); i++) {
-     			StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i); 
+     			StackLoc newLoc = new StackLoc(CgenSupport.SELF, 3 + i); 
         		this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
       		}
       		CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
@@ -210,7 +209,7 @@ class CgenClassTable extends SymbolTable {
         		str.println();
       		}
           //now initialized all locally-defined attributes
-      		setCurrentClass(node);
+      		setcurrClass(node);
       		for (attr att: node.getLocalAttrs()) {
       			if (att.init instanceof no_expr) continue;
       			att.init.code(str, this);
@@ -222,7 +221,7 @@ class CgenClassTable extends SymbolTable {
             		CgenSupport.emitGCAssign(str);    
         		}
       		}
-      		setCurrentClass(null);
+      		setcurrClass(null);
 
       		CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
       		CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
@@ -298,21 +297,21 @@ class CgenClassTable extends SymbolTable {
 	AbstractTable.inttable.addString("0");
 
 	// jk: emit str_const here, str is the *current* stringx
-	AbstractTable.stringtable.codeStringTable(stringclasstag, str);
+	AbstractTable.stringtable.codeStringTable(stringClassTag, str);
 
 	// jk: emit int_const here
-	AbstractTable.inttable.codeStringTable(intclasstag, str);
+	AbstractTable.inttable.codeStringTable(intClassTag, str);
 
-	codeBools(boolclasstag);
+	codeBools(boolClassTag);
     }
 
-// class_nameTab:
-// 	.word	str_const5
-// 	.word	str_const6
-// 	.word	str_const7
-// 	.word	str_const8
-// 	.word	str_const9
-// 	.word	str_const10
+  // class_nameTab:
+  // 	.word	str_const5
+  // 	.word	str_const6
+  // 	.word	str_const7
+  // 	.word	str_const8
+  // 	.word	str_const9
+  // 	.word	str_const10
 
 // question: how to get the str_constX??
 // from the string name get the 
@@ -614,13 +613,13 @@ class CgenClassTable extends SymbolTable {
 	this.str = str;
 
 	// jk: modified classtag here
-	stringclasstag = 4;
+	stringClassTag = 4;
 	// ((CgenNode)this.lookup(TreeConstants.Str)).getClassTag(); 
 	/* Change to your String class tag here */;
-	intclasstag = 2;
+	intClassTag = 2;
 	// ((CgenNode)this.lookup(TreeConstants.Int)).getClassTag(); 
 	/* Change to your Int class tag here */;
-	boolclasstag = 3;
+	boolClassTag = 3;
 	// ((CgenNode)this.lookup(TreeConstants.Bool)).getClassTag();
 	/* Change to your Bool class tag here */;
 
@@ -632,6 +631,7 @@ class CgenClassTable extends SymbolTable {
 	// jk: for building inheritance graph
 	installBasicClasses();
 	installClasses(cls);
+  // put all classes in current scope
 	buildInheritanceTree();
 	setClassTags();
 	installAllClassFeatures();
@@ -682,17 +682,17 @@ class CgenClassTable extends SymbolTable {
 
  	//get the next available label number
     public int nextLabel(){
-      currentLabel++;
-      return currentLabel;
+      currLabel++;
+      return currLabel;
     }
 
-    public void setCurrentClass(CgenNode node){
-      currentClass = node;
+    public void setcurrClass(CgenNode node){
+      currClass = node;
     }
 
-    public CgenNode getCurrentClass(){
-      if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass");
-      return currentClass;
+    public CgenNode getcurrClass(){
+      if (currClass == null) Utilities.fatalError("returning null value from CgenClassTable.getcurrClass");
+      return currClass;
     }
 
     //called on method entrance; set spFromfp to 1

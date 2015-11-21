@@ -292,7 +292,7 @@ class programc extends Program {
     public void cgen(PrintStream s) {
         CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
         //self is always stored in $s0
-        StackLocation selfLoc = new StackLocation(CgenSupport.SELF, 0);
+        StackLoc selfLoc = new StackLoc(CgenSupport.SELF, 0);
         codegen_classtable.enterScope();
         codegen_classtable.addId(TreeConstants.self, selfLoc);
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
@@ -361,11 +361,11 @@ class class_c extends Class_ {
     public void code(PrintStream s, CgenClassTable context) {
         context.enterScope();
         CgenNode cnode = context.getCgenNode(name);
-        context.setCurrentClass(cnode);
+        context.setcurrClass(cnode);
         Vector<attr> attrs = cnode.getAllAttrs();
         //attributes are referenced through SELF register
         for (int i = 0; i < attrs.size(); i++) {
-            StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i);
+            StackLoc newLoc = new StackLoc(CgenSupport.SELF, 3 + i);
             context.addId(attrs.get(i).name, newLoc);
         }
 
@@ -375,7 +375,7 @@ class class_c extends Class_ {
             s.print(name.getString() + CgenSupport.METHOD_SEP+ met.mt.name.getString() + CgenSupport.LABEL);
             met.mt.code(s,context);
         }
-        context.setCurrentClass(null);
+        context.setcurrClass(null);
         context.exitScope();
     }
 
@@ -432,7 +432,7 @@ class method extends Feature {
         context.enterScope();
         for (int i = 0; i < formals.getLength(); i++) {
             //parameters are referenced through fp; fp points to ra; first argument is highest on the stack
-            StackLocation formalLocation = new StackLocation(CgenSupport.FP, formals.getLength() - i + 2);
+            StackLoc formalLocation = new StackLoc(CgenSupport.FP, formals.getLength() - i + 2);
             context.addId(((formalc)formals.getNth(i)).name, formalLocation);
         }
 
@@ -590,7 +590,7 @@ class branch extends Case {
         CgenSupport.emitBranch(nextBranch, s);
         if (validTypes.size() > 0) {
             CgenSupport.emitLabelDef(branchBody, s);
-            StackLocation branchVariableLocation = new StackLocation(CgenSupport.FP, context.getSpFromFp());
+            StackLoc branchVariableLocation = new StackLoc(CgenSupport.FP, context.getSpFromFp());
             context.emitPush(CgenSupport.ACC, s); 
             context.enterScope();
             context.addId(name, branchVariableLocation); //bind case variable to the declared name of this branch
@@ -646,10 +646,10 @@ class assign extends Expression {
       * */
     public void code(PrintStream s, CgenClassTable context) {
         expr.code(s, context);
-        StackLocation variableLocation = (StackLocation) context.lookup(name); //get the location where the assignment variable is stored
-        CgenSupport.emitStore(CgenSupport.ACC, variableLocation.offset, variableLocation.baseRegister, s); //update the value of the assignment variable
+        StackLoc variableLocation = (StackLoc) context.lookup(name); //get the location where the assignment variable is stored
+        CgenSupport.emitStore(CgenSupport.ACC, variableLocation.offset, variableLocation.regBase, s); //update the value of the assignment variable
         //if the garbage collector is turned on, it should be notified the assignment of an attribute
-        if((Flags.cgen_Memmgr == 1) && (variableLocation.baseRegister.equals(CgenSupport.SELF))) {
+        if((Flags.cgen_Memmgr == 1) && (variableLocation.regBase.equals(CgenSupport.SELF))) {
             CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * (variableLocation.offset), s);
             CgenSupport.emitGCAssign(s);   
         }
@@ -723,7 +723,7 @@ class static_dispatch extends Expression {
         int nonVoid = context.nextLabel();
         //test for void dispatch object
         CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
-        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getcurrClass().getFilename().getString());
         CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
         CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
         CgenSupport.emitJal("_dispatch_abort", s);
@@ -800,7 +800,7 @@ class dispatch extends Expression {
         //test for void dispatch object
         int nonVoid = context.nextLabel();
         CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
-        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getcurrClass().getFilename().getString());
         CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
         CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
         CgenSupport.emitJal("_dispatch_abort", s);
@@ -1001,7 +1001,7 @@ class typcase extends Expression {
         int nonVoid = context.nextLabel();
         //jump to _case_abort2 if case variable evaluates to void; or else continue case evaluation
         CgenSupport.emitBne(CgenSupport.ACC, CgenSupport.ZERO, nonVoid, s);
-        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getCurrentClass().getFilename().getString());
+        StringSymbol filename = (StringSymbol) AbstractTable.stringtable.lookup(context.getcurrClass().getFilename().getString());
         CgenSupport.emitLoadString(CgenSupport.ACC, filename, s);
         CgenSupport.emitLoadImm(CgenSupport.T1, this.getLineNumber(), s);
         CgenSupport.emitJal("_case_abort2", s);
@@ -1127,7 +1127,7 @@ class let extends Expression {
         } else {
             context.emitStoreDefaultValue(CgenSupport.ACC, type_decl, s); //if no initialization is provided, initialize let variable with default value
         }
-        StackLocation letVariableLocation = new StackLocation(CgenSupport.FP, context.getSpFromFp());
+        StackLoc letVariableLocation = new StackLoc(CgenSupport.FP, context.getSpFromFp());
         context.emitPush(CgenSupport.ACC, s);
         context.enterScope();
         context.addId(identifier, letVariableLocation); //create let variable binding
@@ -1972,8 +1972,8 @@ class object extends Expression {
         if (name.equals(TreeConstants.self)) {
             CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, s); //move SELF object to accumulator
         } else {
-            StackLocation variableLocation = (StackLocation) context.lookup(name);
-            CgenSupport.emitLoad(CgenSupport.ACC, variableLocation.offset, variableLocation.baseRegister, s); 
+            StackLoc variableLocation = (StackLoc) context.lookup(name);
+            CgenSupport.emitLoad(CgenSupport.ACC, variableLocation.offset, variableLocation.regBase, s); 
         }
     }
 

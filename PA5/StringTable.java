@@ -31,10 +31,10 @@ class StringTable extends AbstractTable {
     }
 
     /** Generates code for all string constants in the string table.  
-     * @param stringclasstag the class tag for String
+     * @param stringClassTag the class tag for String
      * @param s the output stream
      * */
-    public void codeStringTable(int stringclasstag, PrintStream s) {
+    public void codeStringTable(int stringClassTag, PrintStream s) {
 	StringSymbol sym = null;
     // tbl is defined in AbstractTable
 	for (int i = tbl.size() - 1; i >= 0; i--) {
@@ -43,7 +43,7 @@ class StringTable extends AbstractTable {
 	    } catch (ArrayIndexOutOfBoundsException ex) {
 		Utilities.fatalError("Unexpected exception: " + ex);
 	    }
-	    sym.codeDef(stringclasstag, s);
+	    sym.codeDef(stringClassTag, s);
 	}
     }
 }

@@ -37,15 +37,15 @@ class IntSymbol extends AbstractSymbol {
     /** Generates code for the integer constant definition.  This method
      * is incomplete; you get to finish it up in programming assignment
      * 5.
-     * @param intclasstag the class tag for string object
+     * @param intClassTag the class tag for string object
      * @param s the output stream
      *
      * */
-    public void codeDef(int intclasstag, PrintStream s) {
+    public void codeDef(int intClassTag, PrintStream s) {
 	// Add -1 eye catcher
 	s.println(CgenSupport.WORD + "-1");
 	codeRef(s); s.print(CgenSupport.LABEL); // label
-	s.println(CgenSupport.WORD + intclasstag); // tag
+	s.println(CgenSupport.WORD + intClassTag); // tag
 	s.println(CgenSupport.WORD + (CgenSupport.DEFAULT_OBJFIELDS + 
 				      CgenSupport.INT_SLOTS)); // size
 	s.print(CgenSupport.WORD);
