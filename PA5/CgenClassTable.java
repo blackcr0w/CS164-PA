@@ -67,34 +67,33 @@ class CgenClassTable extends SymbolTable {
 
     // jk: this is used of OpSem, changeName
     public CgenNode getCgenNode(AbstractSymbol name){
-      if(name.equals(TreeConstants.SELF_TYPE)) return currClass;
-      CgenNode node = taggedNodes.get(name);
-      if(node == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode");
-      return node;
+    if(name.equals(TreeConstants.SELF_TYPE)) return currClass;
+    CgenNode node = taggedNodes.get(name);
+    if(node == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode");
+    return node;
     }
 
     // set the current class's tag number, increase counter
     // jk: object = 0
-    public void setClassTagsHelper(CgenNode curNode) {
-    	// jk: pass in the root node: object
-    	curNode.setClassTag(currClassNameTag);
-    	taggedNodes.put(curNode.getName(), curNode);  // jk; put <AbstractSymbol, CgenNode>
-    	currClassNameTag++;
-    	// jk: dont know why add children
-    	for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
-            CgenNode child = (CgenNode)e.nextElement();
-            setClassTagsHelper(child);
-        }
+    public void setClassTags(CgenNode curNode) {
+  	// jk: pass in the root node: object
+  	curNode.setClassTag(currClassNameTag);
+  	taggedNodes.put(curNode.getName(), curNode);  // jk; put <AbstractSymbol, CgenNode>
+  	currClassNameTag++;
+  	for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
+    CgenNode child = (CgenNode)e.nextElement();
+    setClassTags(child);
+    }
     }
 
-    // jk: dont know why set from the root()
-    public void setClassTags() {
-    	setClassTagsHelper(root());
-    }
+   //  // jk: dont know why set from the root()
+   //  public void setClassTags() {
+  	// setClassTagsHelper(root());
+   //  }
 
     // depth-first search to install class methods and class attributes to each CgenNode.
     private void installAllClassFeatures() {
-    	installAllClassFeaturesHelper(root(), new Vector<MethodNodePair>(), new Vector<attr>());
+  	installAllClassFeaturesHelper(root(), new Vector<MethodNodePair>(), new Vector<attr>());
     }
 
     // jk: set Attrs for every class:
@@ -102,38 +101,38 @@ class CgenClassTable extends SymbolTable {
     // jk: seconde, set definded attrs
     // there is no attrs for object class
     private void installAllClassFeaturesHelper(CgenNode curNode, Vector<MethodNodePair> inheritedMethods, Vector<attr> inheritedAttrs) {
-    	curNode.setInheritedAttrs(inheritedAttrs);
-    	Vector<MethodNodePair> curMethods = new Vector<MethodNodePair>(inheritedMethods);
-    	Vector<MethodNodePair> newMethods = new Vector<MethodNodePair>(); //hold all locally defined methods
-    	Vector<attr> localAttrs = new Vector<attr>(); //hold all locally defined attributes
-    	for (Enumeration e = curNode.getFeatures().getElements(); e.hasMoreElements();) {
-            Feature feature= ((Feature)e.nextElement());
-            if (feature instanceof method) {
-                newMethods.add(new MethodNodePair(curNode, ((method)feature)));
-            } else if (feature instanceof attr) {
-                localAttrs.add(((attr)feature));
-            }
-        }
+    curNode.setInheritedAttrs(inheritedAttrs);
+    Vector<MethodNodePair> curMethods = new Vector<MethodNodePair>(inheritedMethods);
+    Vector<MethodNodePair> newMethods = new Vector<MethodNodePair>(); //hold all locally defined methods
+    Vector<attr> localAttrs = new Vector<attr>(); //hold all locally defined attributes
+    for (Enumeration e = curNode.getFeatures().getElements(); e.hasMoreElements();) {
+    Feature feature= ((Feature)e.nextElement());
+    if (feature instanceof method) {
+      newMethods.add(new MethodNodePair(curNode, ((method)feature)));
+    } else if (feature instanceof attr) {
+      localAttrs.add(((attr)feature));
+    }
+    }
 
-        //we need to replace the inherited method with new locally-defined method. 
-        for (int i = 0; i < curMethods.size(); i++) {
-        	MethodNodePair met = curMethods.get(i);
-        	int position = newMethods.indexOf(met);
-             
-        	if (position != -1) {
-        		curMethods.set(i, newMethods.get(position));
-        		newMethods.remove(position);
-        	}
-        }
-        curMethods.addAll(newMethods);
-        curNode.setMethods(curMethods);
-        curNode.setLocalAttrs(localAttrs);
+    //we need to replace the inherited method with new locally-defined method. 
+    for (int i = 0; i < curMethods.size(); i++) {
+    MethodNodePair met = curMethods.get(i);
+    int position = newMethods.indexOf(met);
 
-        Vector<attr> allAttrs = curNode.getAllAttrs();
-        for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
-            CgenNode child = (CgenNode)e.nextElement();
-            installAllClassFeaturesHelper(child, curMethods, allAttrs);
-        }
+    if (position != -1) {
+    curMethods.set(i, newMethods.get(position));
+    newMethods.remove(position);
+    }
+    }
+    curMethods.addAll(newMethods);
+    curNode.setMethods(curMethods);
+    curNode.setLocalAttrs(localAttrs);
+
+    Vector<attr> allAttrs = curNode.getAllAttrs();
+    for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
+    CgenNode child = (CgenNode)e.nextElement();
+    installAllClassFeaturesHelper(child, curMethods, allAttrs);
+    }
 
     }
 
@@ -184,53 +183,53 @@ class CgenClassTable extends SymbolTable {
     // jk: emit code for initialization method of all classes
     // Object_init, IO_init... 
     private void codeInitializers() {
-    	for (CgenNode node: taggedNodes.values()) {
-    		str.print(node.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
-    		enterScope();
-     		Vector<attr> attrs = node.getAllAttrs();
-     		for (int i = 0; i < attrs.size(); i++) {
-     			StackLoc newLoc = new StackLoc(CgenSupport.SELF, 3 + i); 
-        		this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
-      		}
-      		CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
-      		CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str); //store old fp
-      		CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str); //store old self
-      		CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str); //store old return address
-      		//enter the initializer function
-      		resetSpFromFp();
-      		//fp points to the ra
-      		CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
-      		CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); //update SELF to reference the object being initialized
-      		AbstractSymbol parent = node.getParent();
-          //initialized parent first; all inherited attributes get initialized
-      		if(!parent.equals(TreeConstants.No_class)){ 
-        		str.print(CgenSupport.JAL);
-        		str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
-        		str.println();
-      		}
-          //now initialized all locally-defined attributes
-      		setcurrClass(node);
-      		for (attr att: node.getLocalAttrs()) {
-      			if (att.init instanceof no_expr) continue;
-      			att.init.code(str, this);
-      			int offset = node.getAttrOffset(att.name);
-      			CgenSupport.emitStore(CgenSupport.ACC, offset, CgenSupport.SELF, str); //store the initialization result in the correct attribute slot
-            //in case the garbage collector is enabled, we need to report assignment to gc. 
-		    	  if(Flags.cgen_Memmgr == 1){
-            		CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * offset, str);
-            		CgenSupport.emitGCAssign(str);    
-        		}
-      		}
-      		setcurrClass(null);
+    for (CgenNode node: taggedNodes.values()) {
+    str.print(node.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
+    enterScope();
+    Vector<attr> attrs = node.getAllAttrs();
+    for (int i = 0; i < attrs.size(); i++) {
+    StackLoc newLoc = new StackLoc(CgenSupport.SELF, 3 + i); 
+    this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
+    }
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
+    CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str); //store old fp
+    CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str); //store old self
+    CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str); //store old return address
+    //enter the initializer function
+    resetSpFromFp();
+    //fp points to the ra
+    CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+    CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); //update SELF to reference the object being initialized
+    AbstractSymbol parent = node.getParent();
+    //initialized parent first; all inherited attributes get initialized
+    if(!parent.equals(TreeConstants.No_class)){ 
+    str.print(CgenSupport.JAL);
+    str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
+    str.println();
+    }
+    //now initialized all locally-defined attributes
+    setcurrClass(node);
+    for (attr att: node.getLocalAttrs()) {
+    if (att.init instanceof no_expr) continue;
+    att.init.code(str, this);
+    int offset = node.getAttrOffset(att.name);
+    CgenSupport.emitStore(CgenSupport.ACC, offset, CgenSupport.SELF, str); //store the initialization result in the correct attribute slot
+    //in case the garbage collector is enabled, we need to report assignment to gc. 
+    if(Flags.cgen_Memmgr == 1){
+    	CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * offset, str);
+    	CgenSupport.emitGCAssign(str);    
+    }
+    }
+    setcurrClass(null);
 
-      		CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
-      		CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
-      		CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
-      		CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
-      		CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
-      		CgenSupport.emitReturn(str);
-      		exitScope();
-    	}
+    CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
+    CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
+    CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
+    CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
+    CgenSupport.emitReturn(str);
+    exitScope();
+    }
     }
 
     /** Emits code to start the .text segment and to
@@ -292,17 +291,17 @@ class CgenClassTable extends SymbolTable {
 
     // jk: should add disp_table here
     private void codeConstants() {
-	// Add constants that are required by the code generator.
-	AbstractTable.stringtable.addString("");
-	AbstractTable.inttable.addString("0");
+    // Add constants that are required by the code generator.
+    AbstractTable.stringtable.addString("");
+    AbstractTable.inttable.addString("0");
 
-	// jk: emit str_const here, str is the *current* stringx
-	AbstractTable.stringtable.codeStringTable(stringClassTag, str);
+    // jk: emit str_const here, str is the *current* stringx
+    AbstractTable.stringtable.codeStringTable(stringClassTag, str);
 
-	// jk: emit int_const here
-	AbstractTable.inttable.codeStringTable(intClassTag, str);
+    // jk: emit int_const here
+    AbstractTable.inttable.codeStringTable(intClassTag, str);
 
-	codeBools(boolClassTag);
+    codeBools(boolClassTag);
     }
 
   // class_nameTab:
@@ -386,7 +385,7 @@ class CgenClassTable extends SymbolTable {
      * */
     private void installBasicClasses() {
 	AbstractSymbol filename 
-	    = AbstractTable.stringtable.addString("<basic class>");
+	    = AbstractTable.stringtable.addString("<basic class>");  // jk: why add AbstractTable here
 	
 	// A few special class names are installed in the lookup table
 	// but not the class list.  Thus, these classes exist, but are
@@ -395,7 +394,7 @@ class CgenClassTable extends SymbolTable {
 	// SELF_TYPE is the self class; it cannot be redefined or
 	// inherited.  prim_slot is a class known to the code generator.
 
-	    // jk: installClass: put class in the cgenNode list
+	    // jk: installClass: put class in the SymbolTable
 	addId(TreeConstants.No_class,
 	      new CgenNode(new class_c(0,
 				      TreeConstants.No_class,
@@ -577,10 +576,14 @@ class CgenClassTable extends SymbolTable {
     // in the base class symbol table.
     
     private void installClass(CgenNode nd) {
-	AbstractSymbol name = nd.getName();
-	if (probe(name) != null) return;
-	nds.addElement(nd);
-	addId(name, nd);
+
+      // addID to the scope (lookup list)
+      // using Vector to build inheritance graph
+      // addID to nds (vector)
+  	AbstractSymbol name = nd.getName();
+  	if (probe(name) != null) return;
+  	nds.addElement(nd);
+  	addId(name, nd);
     }
 
     // install other non-basic classes to the list
@@ -591,7 +594,7 @@ class CgenClassTable extends SymbolTable {
         }
     }
 
-    /** nds: All classes in the program, represented as CgenNode */
+    /*nds: All classes in the program, represented as CgenNode */
     private void buildInheritanceTree() {
 		for (Enumeration e = nds.elements(); e.hasMoreElements(); ) {
 		    setRelations((CgenNode)e.nextElement());
@@ -600,45 +603,45 @@ class CgenClassTable extends SymbolTable {
 
     // jk: only set the parent relation here
     private void setRelations(CgenNode nd) {
-	CgenNode parent = (CgenNode)probe(nd.getParent());
-	nd.setParentNd(parent);
-	parent.addChild(nd);
+  	CgenNode parent = (CgenNode)probe(nd.getParent());
+  	nd.setParentNd(parent);
+  	parent.addChild(nd);
     }    
 
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
     	// jk: cls only constains the non-baisic classes
-	nds = new Vector();
-	// dispTbls = new HashMap<AbstractSymbol, ArrayList<methodName>>();
-	this.str = str;
+  	nds = new Vector();
+  	// dispTbls = new HashMap<AbstractSymbol, ArrayList<methodName>>();
+  	this.str = str;
 
-	// jk: modified classtag here
-	stringClassTag = 4;
-	// ((CgenNode)this.lookup(TreeConstants.Str)).getClassTag(); 
-	/* Change to your String class tag here */;
-	intClassTag = 2;
-	// ((CgenNode)this.lookup(TreeConstants.Int)).getClassTag(); 
-	/* Change to your Int class tag here */;
-	boolClassTag = 3;
-	// ((CgenNode)this.lookup(TreeConstants.Bool)).getClassTag();
-	/* Change to your Bool class tag here */;
+  	// jk: modified classtag here
+  	stringClassTag = 4;
+  	// ((CgenNode)this.lookup(TreeConstants.Str)).getClassTag(); 
+  	/* Change to your String class tag here */;
+  	intClassTag = 2;
+  	// ((CgenNode)this.lookup(TreeConstants.Int)).getClassTag(); 
+  	/* Change to your Int class tag here */;
+  	boolClassTag = 3;
+  	// ((CgenNode)this.lookup(TreeConstants.Bool)).getClassTag();
+  	/* Change to your Bool class tag here */;
 
-	enterScope();  // enter scope
+  	enterScope();  // enter scope
 
-	if (Flags.cgen_debug) 
-		System.out.println("Building CgenClassTable");
-	
-	// jk: for building inheritance graph
-	installBasicClasses();
-	installClasses(cls);
-  // put all classes in current scope
-	buildInheritanceTree();
-	setClassTags();
-	installAllClassFeatures();
+  	if (Flags.cgen_debug) 
+  		System.out.println("Building CgenClassTable");
+  	
+  	// jk: for building inheritance graph
+  	installBasicClasses();
+  	installClasses(cls);
+    // put all classes in current scope
+  	buildInheritanceTree();
+  	setClassTags(root());
+  	installAllClassFeatures();
 
-	code();
+  	code();
 
-	exitScope();  // exit scope
+  	exitScope();  // exit scope
     }
 
     /** This method is the meat of the code generator.  It is to be
@@ -677,39 +680,39 @@ class CgenClassTable extends SymbolTable {
 
     /** Gets the root of the inheritance tree */
     public CgenNode root() {
-	return (CgenNode)probe(TreeConstants.Object_);
+    return (CgenNode)probe(TreeConstants.Object_);
     }
 
  	//get the next available label number
     public int nextLabel(){
-      currLabel++;
-      return currLabel;
+    currLabel++;
+    return currLabel;
     }
 
     public void setcurrClass(CgenNode node){
-      currClass = node;
+    currClass = node;
     }
 
     public CgenNode getcurrClass(){
-      if (currClass == null) Utilities.fatalError("returning null value from CgenClassTable.getcurrClass");
-      return currClass;
+    if (currClass == null) Utilities.fatalError("returning null value from CgenClassTable.getcurrClass");
+    return currClass;
     }
 
     //called on method entrance; set spFromfp to 1
     public void resetSpFromFp(){
-      spFromfp = 1;
+    spFromfp = 1;
     }
 
     //get the next available stack location offset relative to fp; stack grows to lower address, so this method returns a negative number
     public int getSpFromFp(){
-      return -spFromfp;
+    return -spFromfp;
     }
 
     //push the content in reg to stack; increase spFromfp accordingly
     public void emitPush(String reg, PrintStream s) {
-      spFromfp++;
-      CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
-      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
+    spFromfp++;
+    CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
     }
 
    //pop the counter number of arguments from stack; decrease spFromfp accordingly

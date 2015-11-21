@@ -138,19 +138,20 @@ class CgenNode extends class_c {
 
     // jk: set the classTag of current class, changeName
     void setClassTag(int classTag) {
-        // the initial tag should be -1
-        if (this.tag != -1) {
-            System.out.println("this.tag = " + Integer.toString(this.tag));
-            // Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
-        }
-        this.tag = classTag;
+    // the initial tag should be -1
+    if (this.tag != -1) {
+    System.out.println("this.tag = " + Integer.toString(this.tag));
+    // Utilities.fatalError("class tag already set to " + this.tag + " in CgenNode.setClassTag");
     }
+    this.tag = classTag;
+    }
+    
     void setMethods(Vector<MethodNodePair> methods) {
-        if(this.methods != null){
-            Utilities.fatalError("methods already set in CgenNode.setMethods");
-        }
+    if(this.methods != null){
+    Utilities.fatalError("methods already set in CgenNode.setMethods");
+    }
 
-        this.methods = methods;
+    this.methods = methods;
     }
 
     Vector<MethodNodePair> getMethods() {
