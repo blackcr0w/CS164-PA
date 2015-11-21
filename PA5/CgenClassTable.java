@@ -238,49 +238,49 @@ class CgenClassTable extends SymbolTable {
      * declare the global names.
      * */
     private void codeGlobalText() {
-	str.println(CgenSupport.GLOBAL + CgenSupport.HEAP_START);
-	str.print(CgenSupport.HEAP_START + CgenSupport.LABEL);
-	str.println(CgenSupport.WORD + 0);
-	str.println("\t.text");
-	str.print(CgenSupport.GLOBAL);
-	CgenSupport.emitInitRef(TreeConstants.Main, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL);
-	CgenSupport.emitInitRef(TreeConstants.Int, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL);
-	CgenSupport.emitInitRef(TreeConstants.Str, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL);
-	CgenSupport.emitInitRef(TreeConstants.Bool, str);
-	str.println("");
-	str.print(CgenSupport.GLOBAL);
-	CgenSupport.emitMethodRef(TreeConstants.Main, TreeConstants.main_meth, str);
-	str.println("");
+  	str.println(CgenSupport.GLOBAL + CgenSupport.HEAP_START);
+  	str.print(CgenSupport.HEAP_START + CgenSupport.LABEL);
+  	str.println(CgenSupport.WORD + 0);
+  	str.println("\t.text");
+  	str.print(CgenSupport.GLOBAL);
+  	CgenSupport.emitInitRef(TreeConstants.Main, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL);
+  	CgenSupport.emitInitRef(TreeConstants.Int, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL);
+  	CgenSupport.emitInitRef(TreeConstants.Str, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL);
+  	CgenSupport.emitInitRef(TreeConstants.Bool, str);
+  	str.println("");
+  	str.print(CgenSupport.GLOBAL);
+  	CgenSupport.emitMethodRef(TreeConstants.Main, TreeConstants.main_meth, str);
+  	str.println("");
     }
 
     /** Emits code definitions for boolean constants. */
     private void codeBools(int classtag) {
-	BoolConst.falsebool.codeDef(classtag, str);
-	BoolConst.truebool.codeDef(classtag, str);
+  	BoolConst.falsebool.codeDef(classtag, str);
+  	BoolConst.truebool.codeDef(classtag, str);
     }
 
     /** Generates GC choice constants (pointers to GC functions) */
     private void codeSelectGc() {
-	str.println(CgenSupport.GLOBAL + "_MemMgr_INITIALIZER");
-	str.println("_MemMgr_INITIALIZER:");
-	str.println(CgenSupport.WORD 
-		    + CgenSupport.gcInitNames[Flags.cgen_Memmgr]);
+  	str.println(CgenSupport.GLOBAL + "_MemMgr_INITIALIZER");
+  	str.println("_MemMgr_INITIALIZER:");
+  	str.println(CgenSupport.WORD 
+  		    + CgenSupport.gcInitNames[Flags.cgen_Memmgr]);
 
-	str.println(CgenSupport.GLOBAL + "_MemMgr_COLLECTOR");
-	str.println("_MemMgr_COLLECTOR:");
-	str.println(CgenSupport.WORD 
-		    + CgenSupport.gcCollectNames[Flags.cgen_Memmgr]);
+  	str.println(CgenSupport.GLOBAL + "_MemMgr_COLLECTOR");
+  	str.println("_MemMgr_COLLECTOR:");
+  	str.println(CgenSupport.WORD 
+  		    + CgenSupport.gcCollectNames[Flags.cgen_Memmgr]);
 
-	str.println(CgenSupport.GLOBAL + "_MemMgr_TEST");
-	str.println("_MemMgr_TEST:");
-	str.println(CgenSupport.WORD 
-		    + ((Flags.cgen_Memmgr_Test == Flags.GC_TEST) ? "1" : "0"));
+  	str.println(CgenSupport.GLOBAL + "_MemMgr_TEST");
+  	str.println("_MemMgr_TEST:");
+  	str.println(CgenSupport.WORD 
+  		    + ((Flags.cgen_Memmgr_Test == Flags.GC_TEST) ? "1" : "0"));
     }
 
     /** Emits code to reserve space for and initialize all of the
@@ -644,35 +644,35 @@ class CgenClassTable extends SymbolTable {
     /** This method is the meat of the code generator.  It is to be
         filled in programming assignment 5 */
     public void code() {
-	if (Flags.cgen_debug) System.out.println("coding global data");
+  	if (Flags.cgen_debug) System.out.println("coding global data");
 
-	codeGlobalData();  // first: global data
+  	codeGlobalData();  // first: global data
 
-	if (Flags.cgen_debug) System.out.println("choosing gc");
+  	if (Flags.cgen_debug) System.out.println("choosing gc");
 
-	codeSelectGc();  // second: garbage collection
+  	codeSelectGc();  // second: garbage collection
 
-	if (Flags.cgen_debug) System.out.println("coding constants");
+  	if (Flags.cgen_debug) System.out.println("coding constants");
 
-	codeConstants();  // third: constants
-	//                 Add your code to emit
-	//                   - prototype objects
-	//                   - class_nameTab
-	//                   - dispatch tables
-	
-	codeClassNameTable();
-	codeClassObjectTable();
-	codeDispatchTables();
-	codePrototypeObjects();
+  	codeConstants();  // third: constants
+  	//                 Add your code to emit
+  	//                   - prototype objects
+  	//                   - class_nameTab
+  	//                   - dispatch tables
+  	
+  	codeClassNameTable();
+  	codeClassObjectTable();
+  	codeDispatchTables();
+  	codePrototypeObjects();
 
-	if (Flags.cgen_debug) System.out.println("coding global text");
-	codeGlobalText();  // fourth: global text
-	codeInitializers();
+  	if (Flags.cgen_debug) System.out.println("coding global text");
+  	codeGlobalText();  // fourth: global text
+  	codeInitializers();
 
-	//                 Add your code to emit
-	//                   - object initializer
-	//                   - the class methods
-	//                   - etc...
+  	//                 Add your code to emit
+  	//                   - object initializer
+  	//                   - the class methods
+  	//                   - etc...
     }
 
     /** Gets the root of the inheritance tree */
