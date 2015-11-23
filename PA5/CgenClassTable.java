@@ -151,6 +151,24 @@ class CgenClassTable extends SymbolTable {
     codeBools(boolclasstag);
     }
 
+    /** jk: Emits code for class name table 
+      * performe depth first search on the AST, traverse every node and look for the symbol
+      */
+    private void codeClassNameTableHelper(CgenNode currNode) {
+    str.print(CgenSupport.WORD);
+    ((StringSymbol) AbstractTable.stringtable.lookup(currNode.name.getString())).codeRef(str);
+    str.println("");
+    for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
+      CgenNode child = (CgenNode)e.nextElement();
+      codeClassNameTableHelper(child);
+    }
+    } 
+    
+    private void codeClassNameTable() {
+    str.print(CgenSupport.CLASSNAMETAB + CgenSupport.LABEL);
+    codeClassNameTableHelper(root());
+    }
+
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -377,7 +395,7 @@ class CgenClassTable extends SymbolTable {
 
     // using DFS traverse AST, Children is another enumerable Vector
     private void setClassTagsHelper(CgenNode currNode) {
-    System.out.println("classTag = " + classTag);
+    System.out.println("classTag = " + classTag);  // jk: delete
     currNode.setTag(classTag);
     classTag += 1;
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
@@ -424,6 +442,9 @@ class CgenClassTable extends SymbolTable {
 
     if (Flags.cgen_debug) System.out.println("coding constants");
     codeConstants();
+
+    if (Flags.cgen_debug) System.out.println("coding class name table");
+    codeClassNameTable();
 
     //                 Add your code to emit
     //                   - prototype objects
