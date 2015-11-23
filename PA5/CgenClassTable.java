@@ -169,6 +169,28 @@ class CgenClassTable extends SymbolTable {
     codeClassNameTableHelper(root());
     }
 
+    /** jk: emit code for class object table 
+      * still using depth-first search to traverse the AST
+      */
+    private void codeClassObejctTableHelper(CgenNode currNode) {
+    str.print(CgenSupport.WORD);
+    CgenSupport.emitProtObjRef(currNode.name, str);  // emit code for object table
+    str.println();
+    str.print(CgenSupport.WORD);
+    CgenSupport.emitInitRef(currNode.name, str);
+    str.println();
+    for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
+      CgenNode child = (CgenNode)e.nextElement();
+      codeClassObejctTableHelper(child);
+    }    
+    }
+
+    private void codeClassObejctTable() {
+    str.print(CgenSupport.CLASSOBJTAB + CgenSupport.LABEL);
+    codeClassObejctTableHelper(root());
+    }
+
+
 
     /** Creates data structures representing basic Cool classes (Object,
      * IO, Int, Bool, String).  Please note: as is this method does not
@@ -445,6 +467,9 @@ class CgenClassTable extends SymbolTable {
 
     if (Flags.cgen_debug) System.out.println("coding class name table");
     codeClassNameTable();
+
+    if (Flags.cgen_debug) System.out.println("coding class object table");
+    codeClassObejctTable();    
 
     //                 Add your code to emit
     //                   - prototype objects
