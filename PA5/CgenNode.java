@@ -25,6 +25,21 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
 
+class MethodNodePair {
+    CgenNode currNode;
+    method methodTable;
+
+    public MethodNodePair(CgenNode currNode, method mt) {
+    this.currNode = currNode;
+    this.mt = mt;
+    }
+
+    // jk: used to test for equality in CgenClassTable.installAllClassFeaturesHelper
+    public boolean equals(Object o){
+    return o instanceof MethodNodePair && mt.name.equals(((MethodNodePair) o).mt.name);
+    }
+}
+
 class CgenNode extends class_c {
     /** The parent of this node in the inheritance tree */
     private CgenNode parent;
@@ -44,6 +59,10 @@ class CgenNode extends class_c {
     private int classTag;  // jk: the class tag of every cgenNode
     // using "private" attributes to implement encapsulation, attrs are 
     // only accessible using methods
+
+    private Vector<MethodNodePair> methods;  // jk: all methods
+    private Vector<attr> inheritedAttrs;  // jk: inherited attrs
+    private Vector<attr> localAttrs;  // jk: local/new-defined attrs
 
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
@@ -104,6 +123,26 @@ class CgenNode extends class_c {
     int getTag() {
         return this.classTag;
     }
+    
+    Vector<MethodNodePair> getMethods() {
+    if(this.methods == null){
+        Utilities.fatalError("methods not yet set in CgenNode.getMethods");
+    }
+    return this.methods;
+    }
+
+    //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
+    Vector<MethodNodePair> getLocalDefinedMethods() {
+    if(this.methods == null){
+        Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
+    }
+
+    Vector<MethodNodePair> localMethods = new Vector<MethodNodePair>();
+    for (MethodNodePair met : this.methods) {
+        if (met.node.name.equals(this.name)) localMethods.add(met);
+    }
+    return localMethods;
+    }    
 }
     
 

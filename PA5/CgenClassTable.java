@@ -89,25 +89,25 @@ class CgenClassTable extends SymbolTable {
      * declare the global names.
      * */
     private void codeGlobalText() {
-  str.println(CgenSupport.GLOBAL + CgenSupport.HEAP_START);
-  str.print(CgenSupport.HEAP_START + CgenSupport.LABEL);
-  str.println(CgenSupport.WORD + 0);
-  str.println("\t.text");
-  str.print(CgenSupport.GLOBAL);
-  CgenSupport.emitInitRef(TreeConstants.Main, str);
-  str.println("");
-  str.print(CgenSupport.GLOBAL);
-  CgenSupport.emitInitRef(TreeConstants.Int, str);
-  str.println("");
-  str.print(CgenSupport.GLOBAL);
-  CgenSupport.emitInitRef(TreeConstants.Str, str);
-  str.println("");
-  str.print(CgenSupport.GLOBAL);
-  CgenSupport.emitInitRef(TreeConstants.Bool, str);
-  str.println("");
-  str.print(CgenSupport.GLOBAL);
-  CgenSupport.emitMethodRef(TreeConstants.Main, TreeConstants.main_meth, str);
-  str.println("");
+    str.println(CgenSupport.GLOBAL + CgenSupport.HEAP_START);
+    str.print(CgenSupport.HEAP_START + CgenSupport.LABEL);
+    str.println(CgenSupport.WORD + 0);
+    str.println("\t.text");
+    str.print(CgenSupport.GLOBAL);
+    CgenSupport.emitInitRef(TreeConstants.Main, str);
+    str.println("");
+    str.print(CgenSupport.GLOBAL);
+    CgenSupport.emitInitRef(TreeConstants.Int, str);
+    str.println("");
+    str.print(CgenSupport.GLOBAL);
+    CgenSupport.emitInitRef(TreeConstants.Str, str);
+    str.println("");
+    str.print(CgenSupport.GLOBAL);
+    CgenSupport.emitInitRef(TreeConstants.Bool, str);
+    str.println("");
+    str.print(CgenSupport.GLOBAL);
+    CgenSupport.emitMethodRef(TreeConstants.Main, TreeConstants.main_meth, str);
+    str.println("");
     }
 
     /** Emits code definitions for boolean constants. */
@@ -188,6 +188,19 @@ class CgenClassTable extends SymbolTable {
     private void codeClassObejctTable() {
     str.print(CgenSupport.CLASSOBJTAB + CgenSupport.LABEL);
     codeClassObejctTableHelper(root());
+    }
+
+    /** jk: performe depth first search to traverse AST and emit code */
+    private void codeClassDispatchTableHelper(CgenNode currNode) {
+    str.println(currNode.name.getString() + CgenSupport.DISPTAB_SUFFIX + CgenSupport.LABEL);
+    for every method in current method:
+    str.print(CgenSupport.WORD);
+    CgenSupport.emitMethodRef(met.node.name, met.mt.name, str);
+    str.println();
+    }
+
+    private void codeClassDispatchTable() {
+    codeClassDispatchTableHelper(root());
     }
 
 
@@ -430,6 +443,18 @@ class CgenClassTable extends SymbolTable {
     setClassTagsHelper(root());
     }
 
+    /** performe depth first search to traverse AST
+      * add all attrs and methods to current CgenNode
+      */
+    private void installAllClassFeatures() {
+    installAllClassFeaturesHelper(root())
+    }
+
+    private void installAllClassFeaturesHelper(CgenNode currNode) {
+    
+    }
+
+
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
     nds = new Vector();
@@ -443,6 +468,7 @@ class CgenClassTable extends SymbolTable {
     installClasses(cls);
     buildInheritanceTree();
     setClassTags();  // jk: set class tags on every cgenNode
+    installAllClassFeatures();
 
     stringclasstag = ((CgenNode)probe(TreeConstants.Str)).getTag();
     intclasstag = ((CgenNode)probe(TreeConstants.Int)).getTag();
@@ -471,6 +497,8 @@ class CgenClassTable extends SymbolTable {
     if (Flags.cgen_debug) System.out.println("coding class object table");
     codeClassObejctTable();    
 
+    if (Flags.cgen_debug) System.out.println("coding class dispatch table");
+    codeClassDispatchTable();    
     //                 Add your code to emit
     //                   - prototype objects
     //                   - class_nameTab
