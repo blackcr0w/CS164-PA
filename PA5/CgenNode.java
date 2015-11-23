@@ -100,6 +100,10 @@ class CgenNode extends class_c {
     void setTag(int currTag) {
         this.classTag = currTag;
     }
+
+    int getTag() {
+        return this.classTag;
+    }
 }
     
 
