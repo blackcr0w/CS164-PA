@@ -58,8 +58,6 @@ import java.util.Hashtable;
  * @see SymtabExample
  * */
 class SymbolTable {
-    // symbol table is the look up table for name-type pair (for type-checking)
-    // the purpose of symbol table is for managing scope
     private Stack tbl;
     
     /** Creates an empty symbol table. */
@@ -70,8 +68,6 @@ class SymbolTable {
     /** Enters a new scope. A scope must be entered before anything
      * can be added to the table.
      * */
-    // jk: every scope is a new HashTable, a name-type pair
-    // HashMap = <Abstractsymbol, Object>
     public void enterScope() {
 	tbl.push(new Hashtable());
     }
@@ -93,7 +89,6 @@ class SymbolTable {
 	if (tbl.empty()) {
 	    Utilities.fatalError("addId: can't add a symbol without a scope.");
 	}
-    // Stack.peek(): loop up the top of the stack without popping it out
 	((Hashtable)tbl.peek()).put(id, info);
     }
 
@@ -111,7 +106,6 @@ class SymbolTable {
 	}
 	// I break the abstraction here a bit by knowing that stack is 
 	// really a vector...
-    // jk: Stack extends Vector, and inherits elementAt from Vector
 	for (int i = tbl.size() - 1; i >= 0; i--) {
 	    Object info = ((Hashtable)tbl.elementAt(i)).get(sym);
 	    if (info != null) return info;

@@ -85,7 +85,6 @@ class CgenSupport {
     final static String T1  = "$t1";		// Temporary 1 
     final static String T2  = "$t2";            // Temporary 2 
     final static String T3  = "$t3";            // Temporary 3 
-    final static String T4  = "$t4";            // Temporary 3: jk: extra added
     final static String SP  = "$sp";		// Stack pointer 
     final static String FP  = "$fp";		// Frame pointer 
     final static String RA  = "$ra";		// Return address 

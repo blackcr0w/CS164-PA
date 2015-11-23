@@ -31,10 +31,10 @@ class IntTable extends AbstractTable {
     }
 
     /** Generates code for all int constants in the int table.  
-     * @param intClassTag the class tag for Int
+     * @param intclasstag the class tag for Int
      * @param s the output stream
      * */
-    public void codeStringTable(int intClassTag, PrintStream s) {
+    public void codeStringTable(int intclasstag, PrintStream s) {
 	IntSymbol sym = null;
 	for (int i = tbl.size() - 1; i >= 0; i--) {
 	    try {
@@ -42,7 +42,7 @@ class IntTable extends AbstractTable {
 	    } catch (ArrayIndexOutOfBoundsException ex) {
 		Utilities.fatalError("Unexpected exception: " + ex);
 	    }
-	    sym.codeDef(intClassTag, s);
+	    sym.codeDef(intclasstag, s);
 	}
     }
 }

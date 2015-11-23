@@ -44,7 +44,6 @@ import java.io.PrintStream;
 abstract class AbstractSymbol {
     /** The stored string */
     protected String str;
-    // name of symbol
 
     /** The index of this entry in the string table */
     protected int index;
