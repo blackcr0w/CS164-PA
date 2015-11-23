@@ -668,7 +668,7 @@ class CgenClassTable extends SymbolTable {
   	codeDispatchTables();
   	codePrototypeObjects();
 
-  	if (Flags.cgen_debug) System.out.println("coding global text");
+  	if (Flags.cgen_debug) System.out.println("coding global teuxt");
   	codeGlobalText();  // fourth: global text
   	codeInitializers();
 
