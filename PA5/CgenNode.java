@@ -25,20 +25,19 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
 
-/*class MethodNodePair {
+class MethodNode {
     CgenNode currNode;
-    method methodTable;
+    method currMt;
 
-    public MethodNodePair(CgenNode currNode, method mt) {
-    this.currNode = currNode;
-    this.mt = mt;
+    public MethodNode(CgenNode node, method method) {
+    currNode = node;
+    currMt = method;
     }
-
-    // jk: used to test for equality in CgenClassTable.installAllClassFeaturesHelper
+    //  overrive equals method
     public boolean equals(Object o){
-    return o instanceof MethodNodePair && mt.name.equals(((MethodNodePair) o).mt.name);
+    return o instanceof MethodNode && currMt.name.equals(((MethodNode) o).currMt.name);
     }
-}*/
+}
 
 class CgenNode extends class_c {
     /** The parent of this node in the inheritance tree */
@@ -60,9 +59,9 @@ class CgenNode extends class_c {
     // using "private" attributes to implement encapsulation, attrs are 
     // only accessible using methods
 
-    // private Vector<MethodNodePair> methods;  // jk: all methods
     private Vector<attr> inheritedAttrs;  // jk: inherited attrs
     private Vector<attr> localAttrs;  // jk: local/new-defined attrs
+    private Vector<MethodNode> methods;  // jk: all methods of current node
 
     /** Constructs a new CgenNode to represent class "c".
      * @param c the class
@@ -75,6 +74,9 @@ class CgenNode extends class_c {
     this.children = new Vector();
     this.basic_status = basic_status;
     AbstractTable.stringtable.addString(name.getString());
+    this.inheritedAttrs = null;
+    this.localAttrs = null;
+    this.methods = null;
     }
 
     void addChild(CgenNode child) {
@@ -117,13 +119,69 @@ class CgenNode extends class_c {
     }
 
     void setTag(int currTag) {
-        this.classTag = currTag;
+    this.classTag = currTag;
     }
 
     int getTag() {
-        return this.classTag;
+    return this.classTag;
+    }
+
+    void setMethods(Vector<MethodNode> methods) {
+    if(this.methods != null){
+        Utilities.fatalError("methods already set in CgenNode.setMethods");
+    }
+    this.methods = methods;
+    }
+
+    Vector<MethodNode> getMethods() {
+    if(this.methods == null){
+        Utilities.fatalError("methods not yet set in CgenNode.getMethods");
+    }
+    return this.methods;
+    }
+
+    //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
+    Vector<MethodNode> getLocalDefinedMethods() {
+    if(this.methods == null){
+        Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
+    }
+
+    Vector<MethodNode> localMethods = new Vector<MethodNode>();
+    for (MethodNode met : this.methods) {
+        if (met.currNode.name.equals(this.name)) localMethods.add(met);
+    }
+    return localMethods;
+    }
+
+    void setInheritedAttrs(Vector<attr> inheritedAttrs) {
+    if(this.inheritedAttrs != null){
+        Utilities.fatalError("inheritedAttrs already set in CgenNode.setMethods");
+    }
+    this.inheritedAttrs = inheritedAttrs;
+    }
+
+    void setLocalAttrs(Vector<attr> localAttrs) {
+    if(this.inheritedAttrs != null){
+        Utilities.fatalError("localAttrs already set in CgenNode.setMethods");
+    }
+    this.localAttrs = localAttrs;
     }
     
+    Vector<attr> getLocalAttrs() {
+    if(this.localAttrs == null){
+        Utilities.fatalError("local attrs not yet set in CgenNode.getLocalAttrs");
+    }
+    return this.localAttrs;
+    }
+    // jk: get both inherited attributes and local attributes
+    Vector<attr> getAllAttrs(){
+    if(this.inheritedAttrs == null || this.localAttrs == null){
+        Utilities.fatalError("either local attrs or inherited attrs not yet set in CgenNode.getAllAttrs");
+    }
+    Vector<attr> allAttrs = new Vector<attr>(this.inheritedAttrs);
+    allAttrs.addAll(this.localAttrs);
+    return allAttrs;
+    }    
     // Vector<MethodNodePair> getMethods() {
     // if(this.methods == null){
     //     Utilities.fatalError("methods not yet set in CgenNode.getMethods");

@@ -190,6 +190,9 @@ class CgenClassTable extends SymbolTable {
     codeClassObjectTableHelper(root());
     }
 
+    // TODO: 
+    // install all methods and attrs, to be represented in a field in CgenNode
+    // still use depth first seach to traverse AST, emit code for methods
     /** jk: performe depth first search to traverse AST and emit code */
     private void codeClassDispatchTableHelper(CgenNode currNode) {
     str.print(currNode.name.getString() + CgenSupport.DISPTAB_SUFFIX + CgenSupport.LABEL);
@@ -453,18 +456,28 @@ class CgenClassTable extends SymbolTable {
     setClassTagsHelper(root());
     }
 
-    /** performe depth first search to traverse AST
+    /** jk: performe depth first search to traverse AST
       * add all attrs and methods to current CgenNode
+      * add method and attrs at the same time
       */
+    private void installAllClassFeaturesHelper(CgenNode currNode, Vector<MethodNode> inheritedMethods,
+    Vector<attr> inheritedAttrs) {
+    currNode.setInheritedAttrs(inheritedAttrsf);
+    Vector<MethodNode> currMethods = new Vector<MethodNode>(inheritedMethods);
+    Vector<MethodNode> newMethods = new Vector<MethodNode>(); // jk: contain local defined methods
+    for (Enumeration e = currNode.getFeatures().getElements(); e.hasMoreElements();) {
+          Feature feature= ((Feature)e.nextElement());
+          if (feature instanceof method) {
+              newMethods.add(new MethodNode(currNode, ((method)feature)));
+          } else if (feature instanceof attr) {
+              localAttrs.add(((attr)feature));
+          }
+      }    
+    }
+
     private void installAllClassFeatures() {
-    // installAllClassFeaturesHelper(root());
-    return;
+    installAllClassFeaturesHelper(root(), new Vector<MethodNode>());
     }
-
-    private void installAllClassFeaturesHelper(CgenNode currNode) {
-    return;
-    }
-
 
     /** Constructs a new class table and invokes the code generator */
     public CgenClassTable(Classes cls, PrintStream str) {
