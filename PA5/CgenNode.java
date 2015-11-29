@@ -25,7 +25,7 @@ import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
 
-class MethodNodePair {
+/*class MethodNodePair {
     CgenNode currNode;
     method methodTable;
 
@@ -38,7 +38,7 @@ class MethodNodePair {
     public boolean equals(Object o){
     return o instanceof MethodNodePair && mt.name.equals(((MethodNodePair) o).mt.name);
     }
-}
+}*/
 
 class CgenNode extends class_c {
     /** The parent of this node in the inheritance tree */
@@ -60,7 +60,7 @@ class CgenNode extends class_c {
     // using "private" attributes to implement encapsulation, attrs are 
     // only accessible using methods
 
-    private Vector<MethodNodePair> methods;  // jk: all methods
+    // private Vector<MethodNodePair> methods;  // jk: all methods
     private Vector<attr> inheritedAttrs;  // jk: inherited attrs
     private Vector<attr> localAttrs;  // jk: local/new-defined attrs
 
@@ -124,25 +124,25 @@ class CgenNode extends class_c {
         return this.classTag;
     }
     
-    Vector<MethodNodePair> getMethods() {
-    if(this.methods == null){
-        Utilities.fatalError("methods not yet set in CgenNode.getMethods");
-    }
-    return this.methods;
-    }
+    // Vector<MethodNodePair> getMethods() {
+    // if(this.methods == null){
+    //     Utilities.fatalError("methods not yet set in CgenNode.getMethods");
+    // }
+    // return this.methods;
+    // }
 
-    //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
-    Vector<MethodNodePair> getLocalDefinedMethods() {
-    if(this.methods == null){
-        Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
-    }
+    // //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
+    // Vector<MethodNodePair> getLocalDefinedMethods() {
+    // if(this.methods == null){
+    //     Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
+    // }
 
-    Vector<MethodNodePair> localMethods = new Vector<MethodNodePair>();
-    for (MethodNodePair met : this.methods) {
-        if (met.node.name.equals(this.name)) localMethods.add(met);
-    }
-    return localMethods;
-    }    
+    // Vector<MethodNodePair> localMethods = new Vector<MethodNodePair>();
+    // for (MethodNodePair met : this.methods) {
+    //     if (met.node.name.equals(this.name)) localMethods.add(met);
+    // }
+    // return localMethods;
+    // }    
 }
     
 

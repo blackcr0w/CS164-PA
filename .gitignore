@@ -20,6 +20,7 @@ PA5/*
 # But not these files...
 PA5/!.java
 PA5/!.cl
+PA5/!.s
 
 # ignore everything in the original PA5 folder
 PA5-original/*
