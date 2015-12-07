@@ -44,7 +44,7 @@ class StringSymbol extends AbstractSymbol {
 	
 	// Add -1 eye catcher
 	s.println(CgenSupport.WORD + "-1");
-	s.print(CgenSupport.LABEL); // label
+	codeRef(s); s.print(CgenSupport.LABEL); // label
 	s.println(CgenSupport.WORD + stringClassTag); // tag
 	s.println(CgenSupport.WORD + (CgenSupport.DEFAULT_OBJFIELDS +
 				      CgenSupport.STRING_SLOTS +
