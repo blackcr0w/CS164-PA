@@ -126,7 +126,7 @@ class CgenNode extends class_c {
     return this.classTag;
     }
 
-    void setMethods(Vector<MethodNode> methods) {
+    void installMethods(Vector<MethodNode> methods) {
     if(this.methods != null){
         Utilities.fatalError("methods already set in CgenNode.setMethods");
     }
@@ -141,7 +141,7 @@ class CgenNode extends class_c {
     }
 
     //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
-    Vector<MethodNode> getLocalDefinedMethods() {
+    Vector<MethodNode> getNewMethods() {
     if(this.methods == null){
         Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
     }
@@ -153,16 +153,16 @@ class CgenNode extends class_c {
     return localMethods;
     }
 
-    void setInheritedAttrs(Vector<attr> inheritedAttrs) {
+    void installInheritedAttrs(Vector<attr> inheritedAttrs) {
     if(this.inheritedAttrs != null){
         Utilities.fatalError("inheritedAttrs already set in CgenNode.setMethods");
     }
     this.inheritedAttrs = inheritedAttrs;
     }
 
-    void setLocalAttrs(Vector<attr> localAttrs) {
-    if(this.inheritedAttrs != null){
-        Utilities.fatalError("localAttrs already set in CgenNode.setMethods");
+    void installNewAttrs(Vector<attr> localAttrs) {
+    if(this.localAttrs != null) {
+        Utilities.fatalError("local attrs already set in CgenNode.setLocalAttrs");
     }
     this.localAttrs = localAttrs;
     }

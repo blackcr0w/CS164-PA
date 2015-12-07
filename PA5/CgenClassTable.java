@@ -117,7 +117,7 @@ class CgenClassTable extends SymbolTable {
       }
 
       /** Generates GC choice constants (pointers to GC functions) */
-      private void codeSelectGc() {
+    private void codeSelectGc() {
     str.println(CgenSupport.GLOBAL + "_MemMgr_INITIALIZER");
     str.println("_MemMgr_INITIALIZER:");
     str.println(CgenSupport.WORD 
@@ -459,24 +459,49 @@ class CgenClassTable extends SymbolTable {
     /** jk: performe depth first search to traverse AST
       * add all attrs and methods to current CgenNode
       * add method and attrs at the same time
+      * tricky part: attrs do not have order, but Method and override have order in Obj Layout
       */
     private void installAllClassFeaturesHelper(CgenNode currNode, Vector<MethodNode> inheritedMethods,
     Vector<attr> inheritedAttrs) {
-    currNode.setInheritedAttrs(inheritedAttrsf);
-    Vector<MethodNode> currMethods = new Vector<MethodNode>(inheritedMethods);
-    Vector<MethodNode> newMethods = new Vector<MethodNode>(); // jk: contain local defined methods
+    currNode.installInheritedAttrs(inheritedAttrs);  // root inherits from none
+    Vector<MethodNode> currMethods = new Vector<MethodNode>(inheritedMethods);  // root inherits from noone
+    Vector<MethodNode> newMethods = new Vector<MethodNode>(); // temporarily contain new methods
+    Vector<attr> currAttrs = new Vector<attr>();  // all attrs
+
+    // jk: add all newly added methods and attrs,
+    // these features are initialized when "installing class"
     for (Enumeration e = currNode.getFeatures().getElements(); e.hasMoreElements();) {
           Feature feature= ((Feature)e.nextElement());
           if (feature instanceof method) {
               newMethods.add(new MethodNode(currNode, ((method)feature)));
-          } else if (feature instanceof attr) {
-              localAttrs.add(((attr)feature));
-          }
-      }    
+          } 
+          else if (feature instanceof attr) {
+              currAttrs.add(((attr)feature));
+        }
+    }
+    // set features to be inherited by child
+    for (int i = 0; i < currMethods.size(); i++) {
+      MethodNode met = currMethods.get(i);
+      int index = newMethods.indexOf(met);
+      if (index != -1) {
+        currMethods.set(i, newMethods.get(index));
+        newMethods.remove(index);
+      }
+    }
+    currMethods.addAll(newMethods);
+    currNode.installMethods(currMethods);
+    currNode.installNewAttrs(currAttrs);
+
+    currAttrs.addAll(inheritedAttrs);
+    // perform depth-first search on the child node
+    for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
+      CgenNode child = (CgenNode)e.nextElement();
+      installAllClassFeaturesHelper(child, currMethods, currAttrs);
+    }
     }
 
     private void installAllClassFeatures() {
-    installAllClassFeaturesHelper(root(), new Vector<MethodNode>());
+    installAllClassFeaturesHelper(root(), new Vector<MethodNode>(), new Vector<attr>());
     }
 
     /** Constructs a new class table and invokes the code generator */
@@ -492,7 +517,7 @@ class CgenClassTable extends SymbolTable {
     installClasses(cls);
     buildInheritanceTree();
     setClassTags();  // jk: set class tags on every cgenNode
-    // installAllClassFeatures();
+    installAllClassFeatures();  // install methods and attrs
 
     stringclasstag = ((CgenNode)probe(TreeConstants.Str)).getTag();
     intclasstag = ((CgenNode)probe(TreeConstants.Int)).getTag();
