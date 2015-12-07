@@ -181,7 +181,8 @@ class CgenNode extends class_c {
     Vector<attr> allAttrs = new Vector<attr>(this.inheritedAttrs);
     allAttrs.addAll(this.localAttrs);
     return allAttrs;
-    }    
+    }
+        
     // Vector<MethodNodePair> getMethods() {
     // if(this.methods == null){
     //     Utilities.fatalError("methods not yet set in CgenNode.getMethods");

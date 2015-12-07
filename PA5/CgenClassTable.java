@@ -197,15 +197,12 @@ class CgenClassTable extends SymbolTable {
     private void codeClassDispatchTableHelper(CgenNode currNode) {
     str.print(currNode.name.getString() + CgenSupport.DISPTAB_SUFFIX + CgenSupport.LABEL);
     // for every method in current method:
-    str.print(CgenSupport.WORD);  CgenSupport.emitProtObjRef(currNode.name, str);
-    str.print(".");  CgenSupport.emitInitRef(TreeConstants.cool_abort, str);  str.println();
+    for (MethodNode currMethods : currNode.getMethods()) {
+      str.print(CgenSupport.WORD);
+      CgenSupport.emitMethodRef(currMethods.currNode.name, currMethods.currMt.name, str);
+      str.println();
+    }
 
-    str.print(CgenSupport.WORD);  CgenSupport.emitProtObjRef(currNode.name, str);
-    str.print(".");  CgenSupport.emitInitRef(TreeConstants.type_name, str);  str.println();
-    str.print(CgenSupport.WORD);  CgenSupport.emitProtObjRef(currNode.name, str);
-    str.print(".");  CgenSupport.emitInitRef(TreeConstants.type_name, str);  str.println();
-    // CgenSupport.emitMethodRef(met.node.name, met.mt.name, str);
-    // str.println();
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
       CgenNode child = (CgenNode)e.nextElement();
       codeClassDispatchTableHelper(child);
