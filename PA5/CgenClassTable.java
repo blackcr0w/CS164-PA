@@ -206,11 +206,50 @@ class CgenClassTable extends SymbolTable {
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
       CgenNode child = (CgenNode)e.nextElement();
       codeClassDispatchTableHelper(child);
-    }     
+      }     
     }
 
     private void codeClassDispatchTables() {
     codeClassDispatchTableHelper(root());
+    }
+
+    // jk: helper function to emit attr code
+    private void emitAttrCode(attr currAttr) {
+    str.print(CgenSupport.WORD);
+    AbstractSymbol clas = currAttr.type_decl;
+      if(clas.equals(TreeConstants.Int)){
+        ((IntSymbol) AbstractTable.inttable.lookup("0")).codeRef(str);
+     } else if (clas.equals(TreeConstants.Bool)) {
+        BoolConst.falsebool.codeRef(str);
+      } else if (clas.equals(TreeConstants.Str)) {
+        ((StringSymbol) AbstractTable.stringtable.lookup("")).codeRef(str);
+      } else {
+        str.print(0); // void
+      }
+      str.println();
+    }    
+
+    // jk: obj layout: -1 -> classTag -> class size -> dispatch table -> attrs
+    private void codeClassProtoObjTableHelper(CgenNode currNode) {
+    str.println(CgenSupport.WORD + "-1");
+    str.print(currNode.name.getString() + CgenSupport.PROTOBJ_SUFFIX  + CgenSupport.LABEL);
+    str.println(CgenSupport.WORD + currNode.getTag());
+    Vector<attr> allAttrs = currNode.getAllAttrs();  // calc size
+    int objSize = 3 + allAttrs.size();  // size = # of attr + 3
+    str.println(CgenSupport.WORD + objSize);
+    str.println(CgenSupport.WORD + currNode.name.getString() + CgenSupport.DISPTAB_SUFFIX);
+    for (attr currAttr: allAttrs) {
+      emitAttrCode(currAttr);      
+    }
+
+    for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
+      CgenNode child = (CgenNode)e.nextElement();
+      codeClassProtoObjTableHelper(child);
+      } 
+    }
+
+    private void codeClassProtoObjTable() {
+    codeClassProtoObjTableHelper(root());
     }
 
 
@@ -525,6 +564,14 @@ class CgenClassTable extends SymbolTable {
     exitScope();
     }
 
+    public void codeObjInitializer() {
+      return;
+    }
+
+    public void codeClassMethods() {
+      return;
+    }
+
     /** This method is the meat of the code generator.  It is to be
         filled in programming assignment 5 */
     public void code() {
@@ -544,7 +591,11 @@ class CgenClassTable extends SymbolTable {
     codeClassObjectTable();    
 
     if (Flags.cgen_debug) System.out.println("coding class dispatch tables for each class");
-    codeClassDispatchTables();    
+    codeClassDispatchTables();  
+
+    if (Flags.cgen_debug) System.out.println("coding prototype object tables for each class");
+    codeClassProtoObjTable();    
+
     //                 Add your code to emit
     //                   - prototype objects
     //                   - class_nameTab
@@ -557,12 +608,14 @@ class CgenClassTable extends SymbolTable {
     //                   - object initializer
     //                   - the class methods
     //                   - etc...
-      }
+    codeObjInitializer();
+    codeClassMethods();
+    }
 
       /** Gets the root of the inheritance tree */
-      public CgenNode root() {
-      return (CgenNode)probe(TreeConstants.Object_);
-      }
+    public CgenNode root() {
+    return (CgenNode)probe(TreeConstants.Object_);
+    }
 }
         
     
