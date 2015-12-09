@@ -436,6 +436,8 @@ class attr extends Feature {
 	init.dump_with_types(out, n + 2);
     }
 
+    public void code(PrintStream str, SymbolTable)
+
 }
 
 
@@ -556,6 +558,7 @@ class assign extends Expression {
       * in programming assignment 5.  (You may add or remove parameters as
       * you wish.)
       * @param s the output stream 
+      * @param 
       * */
     public void code(PrintStream s) {
     }

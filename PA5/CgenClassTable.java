@@ -564,8 +564,49 @@ class CgenClassTable extends SymbolTable {
     exitScope();
     }
 
+
+// Object_init:
+//   addiu $sp $sp -12  # adjust stack for arguments
+//   sw  $fp 12($sp)  # store $fp
+//   sw  $s0 8($sp)  # save ptr to self
+//   sw  $ra 4($sp)  # save return addr
+//   addiu $fp $sp 16  
+//   move  $s0 $a0
+//   move  $a0 $s0
+//   lw  $fp 12($sp)
+//   lw  $s0 8($sp)
+//   lw  $ra 4($sp)
+//   addiu $sp $sp 12
+//   jr  $ra
+
+// Int_init:
+//   addiu $sp $sp -12
+//   sw  $fp 12($sp)
+//   sw  $s0 8($sp)
+//   sw  $ra 4($sp)
+//   addiu $fp $sp 16
+//   move  $s0 $a0
+//   jal Object_init
+//   move  $a0 $s0
+//   lw  $fp 12($sp)
+//   lw  $s0 8($sp)
+//   lw  $ra 4($sp)
+//   addiu $sp $sp 12
+//   jr  $ra
+    public void codeObjInitializerHelper(CgenNode currNode) {
+    str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
+    enterScope();  // jk: why enter new scope?
+    Vector<attr> attrs = currNode.getAllAttrs();
+    for (int i = 0; i < attrs.size(); i++) {  // jk: ??
+      StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i);
+      // addId(AbstractSymbol id, Object info)
+      this.addId(attrs.get(i).name, newLoc);
+    }
+
+    }
+
     public void codeObjInitializer() {
-      return;
+    codeObjInitializerHelper(root());
     }
 
     public void codeClassMethods() {
