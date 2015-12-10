@@ -155,8 +155,9 @@ abstract class Expression extends TreeNode {
         else
             { out.println(Utilities.pad(n) + ": _no_type"); }
     }
-    public abstract void code(PrintStream s);
-
+    public void code(PrintStream s, CgenClassTable currTable) {
+        return;
+    }
 }
 
 
@@ -429,14 +430,12 @@ class attr extends Feature {
 
     
     public void dump_with_types(PrintStream out, int n) {
-        dump_line(out, n);
-        out.println(Utilities.pad(n) + "_attr");
-        dump_AbstractSymbol(out, n + 2, name);
-        dump_AbstractSymbol(out, n + 2, type_decl);
+    dump_line(out, n);
+    out.println(Utilities.pad(n) + "_attr");
+    dump_AbstractSymbol(out, n + 2, name);
+    dump_AbstractSymbol(out, n + 2, type_decl);
 	init.dump_with_types(out, n + 2);
     }
-
-    public void code(PrintStream str, SymbolTable)
 
 }
 

@@ -594,15 +594,37 @@ class CgenClassTable extends SymbolTable {
 //   addiu $sp $sp 12
 //   jr  $ra
     public void codeObjInitializerHelper(CgenNode currNode) {
-    str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
-    enterScope();  // jk: why enter new scope?
-    Vector<attr> attrs = currNode.getAllAttrs();
-    for (int i = 0; i < attrs.size(); i++) {  // jk: ??
-      StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i);
-      // addId(AbstractSymbol id, Object info)
-      this.addId(attrs.get(i).name, newLoc);
+    str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL); 
+    // enterScope();  // jk: why enter new scope?
+    // Vector<attr> attrs = currNode.getAllAttrs();
+    // for (int i = 0; i < attrs.size(); i++) {  // jk: ??
+    //   StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i); // "$s0"; Ptr to self: base + offest
+    //     this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
+    //   }
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);  // addiu sp sp -12
+      CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str);  // sw fp sp 
+      CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str);  // sw r0, sp, 
+      CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str);  // sw
+      CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+      CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); 
+      // jal to parent initializer
+      AbstractSymbol parent = currNode.getParent();
+      if(!parent.equals(TreeConstants.No_class)){ 
+        str.print(CgenSupport.JAL);
+        str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
+        str.println();
+      }
+      CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
+      CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
+      CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
+      CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
+      CgenSupport.emitReturn(str);  
+      
+    for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
+      CgenNode child = (CgenNode)e.nextElement();
+      codeObjInitializerHelper(child);
     }
-
     }
 
     public void codeObjInitializer() {
@@ -610,7 +632,7 @@ class CgenClassTable extends SymbolTable {
     }
 
     public void codeClassMethods() {
-      return;
+    return;
     }
 
     /** This method is the meat of the code generator.  It is to be
