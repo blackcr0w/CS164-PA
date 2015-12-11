@@ -167,12 +167,45 @@ Instructions
 
         GOOD LUCK!
 
----8<------8<------8<------8<---cut here---8<------8<------8<------8<---
+---8<------8<------8<------8<---cut here---8<------8<------8<------8<------8<------8<------
 
 Write-up for PA5
 ----------------
+                        +--------------------------+
+                        | CS 164                   |
+                        | Project 5: Code Generator|
+                        | Design Document          |
+                        +--------------------------+
+
+                    Mingjie Zhao        <jackzhao@berkeley.edu>     cs164-cp
+
+1. Design Decisions
+
+    (1) Static data area
+
+        For static data, including constants, class name (tag) table, class object table, 
+        class dispatch table and prototype objects, I used a depth-first search to traverse 
+        the AST, output the required code at every code.
+
+        Using a recursive call to every CgenNode's "child" to implement depth-first search.
+
+    (2) Dispatch table
+
+        For dispatch table, how to inherit methods is a little tricky at first. I defined a
+        new class "MethodNode" in CgenNode to store all methods one class has. When "installing" all
+        classes, the methods are also installed in "MethodNode" instances.
+
+    (3) Prototype object
+
+        For prototype, the attributes and methods can be devided into two parts: inherited 
+        and newly defined. And inherited attributes always comes first in the object layout.
+
+    (4) 
 
 
+
+
+2. Explanation to Test Cases
 
 
 

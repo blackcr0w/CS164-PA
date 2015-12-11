@@ -24,6 +24,8 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 import java.io.PrintStream;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.HashSet;
 
 class MethodNode {
     CgenNode currNode;
@@ -174,30 +176,80 @@ class CgenNode extends class_c {
     return this.localAttrs;
     }
     // jk: get both inherited attributes and local attributes
+    // Vector<attr> getAllAttrs(){
+    // if(this.inheritedAttrs == null || this.localAttrs == null){
+    //     Utilities.fatalError("either local attrs or inherited attrs not yet set in CgenNode.getAllAttrs");
+    // }
+    // Vector<attr> allAttrs = new Vector<attr>(this.inheritedAttrs);
+    // allAttrs.addAll(this.localAttrs);
+    // return allAttrs;
+    // }
+
+    //get both inherited attributes and locally-defined attributes
     Vector<attr> getAllAttrs(){
-    if(this.inheritedAttrs == null || this.localAttrs == null){
-        Utilities.fatalError("either local attrs or inherited attrs not yet set in CgenNode.getAllAttrs");
+        if(this.inheritedAttrs == null || this.localAttrs == null){
+            Utilities.fatalError("either local attrs or inherited attrs not yet set in CgenNode.getAllAttrs");
+        }
+        Vector<attr> allAttrs = new Vector<attr>(this.inheritedAttrs);
+        allAttrs.addAll(this.localAttrs);
+        return allAttrs;
     }
-    Vector<attr> allAttrs = new Vector<attr>(this.inheritedAttrs);
-    allAttrs.addAll(this.localAttrs);
-    return allAttrs;
-    }
-        
-    // Vector<MethodNodePair> getMethods() {
+
+    // Vector<MethodNode> getMethods() {
     // if(this.methods == null){
     //     Utilities.fatalError("methods not yet set in CgenNode.getMethods");
     // }
     // return this.methods;
     // }
 
-    // //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
-    // Vector<MethodNodePair> getLocalDefinedMethods() {
-    // if(this.methods == null){
-    //     Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
-    // }
+    //get locally-defined methods of this CgenNode, including the locally-overriden methods inherited from parent
+    Vector<MethodNode> getLocalDefinedMethods() {
+        if(this.methods == null){
+            Utilities.fatalError("methods not yet set in CgenNode.getLocalDefinedMethods");
+        }
 
-    // Vector<MethodNodePair> localMethods = new Vector<MethodNodePair>();
-    // for (MethodNodePair met : this.methods) {
+        Vector<MethodNode> localMethods = new Vector<MethodNode>();
+        for (MethodNode met : this.methods) {
+            if (met.currNode.name.equals(this.name)) localMethods.add(met);
+        }
+
+        return localMethods;
+    }
+
+    Set<CgenNode> getAllDescendants(){
+        Set<CgenNode> descendants = new HashSet<CgenNode>();
+        addDescendants(descendants, this);
+        return descendants;
+    }  
+
+    private void addDescendants(Set<CgenNode> descendants, CgenNode curNode){
+        descendants.add(curNode);
+
+        for (Enumeration<CgenNode> e = curNode.getChildren(); e.hasMoreElements();) {
+            CgenNode child = (CgenNode)e.nextElement();
+            addDescendants(descendants, child);
+        }
+
+    }
+
+    int getClassTag() {
+        if(this.classTag == -1){
+            Utilities.fatalError("class tag not yet set in CgenNode.getClassTag");
+        }
+        return this.classTag;
+    }    
+
+    //get method offset in dispatch table
+    int getMethodOffset(AbstractSymbol methodName){
+        for(int i = 0; i < methods.size(); i++){
+            if(methods.get(i).currMt.name.equals(methodName)) return i; 
+        }
+        Utilities.fatalError("can't find method in CgenNode.getMethodOffset");
+        return -1;
+    }          
+
+    // Vector<MethodNode> localMethods = new Vector<MethodNode>();
+    // for (MethodNode met : this.methods) {
     //     if (met.node.name.equals(this.name)) localMethods.add(met);
     // }
     // return localMethods;

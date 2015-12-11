@@ -11,6 +11,10 @@
 import java.util.Enumeration;
 import java.io.PrintStream;
 import java.util.Vector;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.Comparator;
 
 
 /** Defines simple phylum Program */
@@ -252,45 +256,56 @@ class programc extends Program {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_program");
         for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
-	    ((Class_)e.nextElement()).dump_with_types(out, n + 2);
+      ((Class_)e.nextElement()).dump_with_types(out, n + 2);
         }
     }
+
     /** This method is the entry point to the semantic checker.  You will
         need to complete it in programming assignment 4.
-	<p>
+  <p>
         Your checker should do the following two things:
-	<ol>
-	<li>Check that the program is semantically correct
-	<li>Decorate the abstract syntax tree with type information
+  <ol>
+  <li>Check that the program is semantically correct
+  <li>Decorate the abstract syntax tree with type information
         by setting the type field in each Expression node.
         (see tree.h)
-	</ol>
-	<p>
-	You are free to first do (1) and make sure you catch all semantic
-    	errors. Part (2) can be done in a second stage when you want
-	to test the complete compiler.
+  </ol>
+  <p>
+  You are free to first do (1) and make sure you catch all semantic
+      errors. Part (2) can be done in a second stage when you want
+  to test the complete compiler.
     */
     public void semant() {
-	/* ClassTable constructor may do some semantic analysis */
-	ClassTable classTable = new ClassTable(classes);
-	
-	/* some semantic analysis code may go here */
+  /* ClassTable constructor may do some semantic analysis */
+  ClassTable classTable = new ClassTable(classes);
+  
+  /* some semantic analysis code may go here */
 
-	if (classTable.errors()) {
-	    System.err.println("Compilation halted due to static semantic errors.");
-	    System.exit(1);
-	}
+  if (classTable.errors()) {
+      System.err.println("Compilation halted due to static semantic errors.");
+      System.exit(1);
+  }
     }
+
     /** This method is the entry point to the code generator.  All of the work
       * of the code generator takes place within CgenClassTable constructor.
       * @param s the output stream 
       * @see CgenClassTable
       * */
     public void cgen(PrintStream s) {
-	CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
+        CgenClassTable codegen_classtable = new CgenClassTable(classes, s);
+        //self is always stored in $s0
+        StackLocation selfLoc = new StackLocation(CgenSupport.SELF, 0);
+        codegen_classtable.enterScope();
+        codegen_classtable.addId(TreeConstants.self, selfLoc);
+        for (Enumeration e = classes.getElements(); e.hasMoreElements(); ) {
+            class_c c = ((class_c)e.nextElement()); 
+            c.code(s, codegen_classtable);  
+        }
+        codegen_classtable.exitScope();
     }
-
-}
+}    
+    
 
 
 /** Defines AST constructor 'class_c'.
@@ -337,7 +352,7 @@ class class_c extends Class_ {
         Utilities.printEscapedString(out, filename.getString());
         out.println("\"\n" + Utilities.pad(n + 2) + "(");
         for (Enumeration e = features.getElements(); e.hasMoreElements();) {
-	    ((Feature)e.nextElement()).dump_with_types(out, n + 2);
+      ((Feature)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
     }
@@ -345,6 +360,27 @@ class class_c extends Class_ {
     public AbstractSymbol getParent()   { return parent; }
     public AbstractSymbol getFilename() { return filename; }
     public Features getFeatures()       { return features; }
+
+    public void code(PrintStream s, CgenClassTable context) {
+        context.enterScope();
+        CgenNode cnode = context.getCgenNode(name);
+        context.setCurrentClass(cnode);
+        Vector<attr> attrs = cnode.getAllAttrs();
+        //attributes are referenced through SELF register
+        for (int i = 0; i < attrs.size(); i++) {
+            StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i);
+            context.addId(attrs.get(i).name, newLoc);
+        }
+
+        Vector<MethodNode> localDefinedMethods = cnode.getLocalDefinedMethods();
+        //emit code for locally-defined(including overriden) methods
+        for (MethodNode met: localDefinedMethods) {
+            s.print(name.getString() + CgenSupport.METHOD_SEP+ met.currMt.name.getString() + CgenSupport.LABEL);
+            met.currMt.code(s,context);
+        }
+        context.setCurrentClass(null);
+        context.exitScope();
+    }   
 
 }
 
@@ -389,11 +425,41 @@ class method extends Feature {
         out.println(Utilities.pad(n) + "_method");
         dump_AbstractSymbol(out, n + 2, name);
         for (Enumeration e = formals.getElements(); e.hasMoreElements();) {
-	    ((Formal)e.nextElement()).dump_with_types(out, n + 2);
+      ((Formal)e.nextElement()).dump_with_types(out, n + 2);
         }
         dump_AbstractSymbol(out, n + 2, return_type);
-	expr.dump_with_types(out, n + 2);
+  expr.dump_with_types(out, n + 2);
     }
+
+    public void dummy() {
+        return;
+    }
+
+    public void code(PrintStream s, CgenClassTable context) {
+        context.enterScope();
+        for (int i = 0; i < formals.getLength(); i++) {
+            //parameters are referenced through fp; fp points to ra; first argument is highest on the stack
+            StackLocation formalLocation = new StackLocation(CgenSupport.FP, formals.getLength() - i + 2);
+            context.addId(((formalc)formals.getNth(i)).name, formalLocation);
+        }
+
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, s);
+        CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, s); //store old fp
+        CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, s); //store old self
+        CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, s); //store return address
+        //enter the method body
+        context.resetSpFromFp();
+        //fp points to the ra
+        CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, s);
+        CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, s); //update SELF to reference the dispatch object
+        expr.code(s, context);
+        CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, s); //restore old fp
+        CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, s); //restore old self
+        CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, s); //restore old return address
+        CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12 + 4 * formals.getLength(), s); //pop all arguments and old fp, self and return address off stack
+        CgenSupport.emitReturn(s);
+        context.exitScope();
+    }    
 
 }
 
@@ -434,7 +500,7 @@ class attr extends Feature {
     out.println(Utilities.pad(n) + "_attr");
     dump_AbstractSymbol(out, n + 2, name);
     dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
+  init.dump_with_types(out, n + 2);
     }
 
 }
@@ -513,7 +579,7 @@ class branch extends Case {
         out.println(Utilities.pad(n) + "_branch");
         dump_AbstractSymbol(out, n + 2, name);
         dump_AbstractSymbol(out, n + 2, type_decl);
-	expr.dump_with_types(out, n + 2);
+  expr.dump_with_types(out, n + 2);
     }
 
 }
@@ -550,8 +616,8 @@ class assign extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_assign");
         dump_AbstractSymbol(out, n + 2, name);
-	expr.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  expr.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -604,15 +670,15 @@ class static_dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_static_dispatch");
-	expr.dump_with_types(out, n + 2);
+  expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, type_name);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+      ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -660,14 +726,14 @@ class dispatch extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_dispatch");
-	expr.dump_with_types(out, n + 2);
+  expr.dump_with_types(out, n + 2);
         dump_AbstractSymbol(out, n + 2, name);
         out.println(Utilities.pad(n + 2) + "(");
         for (Enumeration e = actual.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+      ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
         out.println(Utilities.pad(n + 2) + ")");
-	dump_type(out, n);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -715,10 +781,10 @@ class cond extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_cond");
-	pred.dump_with_types(out, n + 2);
-	then_exp.dump_with_types(out, n + 2);
-	else_exp.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  pred.dump_with_types(out, n + 2);
+  then_exp.dump_with_types(out, n + 2);
+  else_exp.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -762,9 +828,9 @@ class loop extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_loop");
-	pred.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  pred.dump_with_types(out, n + 2);
+  body.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -808,11 +874,11 @@ class typcase extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_typcase");
-	expr.dump_with_types(out, n + 2);
+  expr.dump_with_types(out, n + 2);
         for (Enumeration e = cases.getElements(); e.hasMoreElements();) {
-	    ((Case)e.nextElement()).dump_with_types(out, n + 2);
+      ((Case)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -853,9 +919,9 @@ class block extends Expression {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_block");
         for (Enumeration e = body.getElements(); e.hasMoreElements();) {
-	    ((Expression)e.nextElement()).dump_with_types(out, n + 2);
+      ((Expression)e.nextElement()).dump_with_types(out, n + 2);
         }
-	dump_type(out, n);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -907,11 +973,11 @@ class let extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_let");
-	dump_AbstractSymbol(out, n + 2, identifier);
-	dump_AbstractSymbol(out, n + 2, type_decl);
-	init.dump_with_types(out, n + 2);
-	body.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  dump_AbstractSymbol(out, n + 2, identifier);
+  dump_AbstractSymbol(out, n + 2, type_decl);
+  init.dump_with_types(out, n + 2);
+  body.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -955,9 +1021,9 @@ class plus extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_plus");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1001,9 +1067,9 @@ class sub extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_sub");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1047,9 +1113,9 @@ class mul extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_mul");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1093,9 +1159,9 @@ class divide extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_divide");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1135,8 +1201,8 @@ class neg extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_neg");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1180,9 +1246,9 @@ class lt extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_lt");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1226,9 +1292,9 @@ class eq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_eq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1272,9 +1338,9 @@ class leq extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_leq");
-	e1.dump_with_types(out, n + 2);
-	e2.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  e2.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1314,8 +1380,8 @@ class comp extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_comp");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1355,15 +1421,15 @@ class int_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_int");
-	dump_AbstractSymbol(out, n + 2, token);
-	dump_type(out, n);
+  dump_AbstractSymbol(out, n + 2, token);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
     public void code(PrintStream s) {
-	CgenSupport.emitLoadInt(CgenSupport.ACC,
+  CgenSupport.emitLoadInt(CgenSupport.ACC,
                                 (IntSymbol)AbstractTable.inttable.lookup(token.getString()), s);
     }
 
@@ -1396,15 +1462,15 @@ class bool_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_bool");
-	dump_Boolean(out, n + 2, val);
-	dump_type(out, n);
+  dump_Boolean(out, n + 2, val);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
     public void code(PrintStream s) {
-	CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
+  CgenSupport.emitLoadBool(CgenSupport.ACC, new BoolConst(val), s);
     }
 
 }
@@ -1436,17 +1502,17 @@ class string_const extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_string");
-	out.print(Utilities.pad(n + 2) + "\"");
-	Utilities.printEscapedString(out, token.getString());
-	out.println("\"");
-	dump_type(out, n);
+  out.print(Utilities.pad(n + 2) + "\"");
+  Utilities.printEscapedString(out, token.getString());
+  out.println("\"");
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method method is provided
       * to you as an example of code generation.
       * @param s the output stream 
       * */
     public void code(PrintStream s) {
-	CgenSupport.emitLoadString(CgenSupport.ACC,
+  CgenSupport.emitLoadString(CgenSupport.ACC,
                                    (StringSymbol)AbstractTable.stringtable.lookup(token.getString()), s);
     }
 
@@ -1479,8 +1545,8 @@ class new_ extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_new");
-	dump_AbstractSymbol(out, n + 2, type_name);
-	dump_type(out, n);
+  dump_AbstractSymbol(out, n + 2, type_name);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1520,8 +1586,8 @@ class isvoid extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_isvoid");
-	e1.dump_with_types(out, n + 2);
-	dump_type(out, n);
+  e1.dump_with_types(out, n + 2);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1557,7 +1623,7 @@ class no_expr extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_no_expr");
-	dump_type(out, n);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1597,8 +1663,8 @@ class object extends Expression {
     public void dump_with_types(PrintStream out, int n) {
         dump_line(out, n);
         out.println(Utilities.pad(n) + "_object");
-	dump_AbstractSymbol(out, n + 2, name);
-	dump_type(out, n);
+  dump_AbstractSymbol(out, n + 2, name);
+  dump_type(out, n);
     }
     /** Generates code for this expression.  This method is to be completed 
       * in programming assignment 5.  (You may add or remove parameters as
@@ -1607,8 +1673,9 @@ class object extends Expression {
       * */
     public void code(PrintStream s) {
     }
-
-
 }
+
+
+
 
 

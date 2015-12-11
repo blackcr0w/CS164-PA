@@ -22,8 +22,23 @@ PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 // This is a project skeleton file
 
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.LinkedHashMap;
+
+//StackLocation class is used to store the correct location to retrieve an attribute, a method argument and a temporary variable.
+class StackLocation {
+  public String baseRegister;
+  public int offset;
+
+    public StackLocation(String reg, int off){
+        baseRegister = reg; 
+        offset = off;
+    }
+}
 
 /** This class is used for representing the inheritance tree during code
     generation. You will need to fill in some of its methods and
@@ -41,6 +56,20 @@ class CgenClassTable extends SymbolTable {
     private int boolclasstag;
 
     private int classTag = 0;
+    private int currentLabel = -1;
+    private int spFromfp = 1;  // next stack location
+    private CgenNode currentClass;
+    private LinkedHashMap<AbstractSymbol, CgenNode> taggedNodes = new LinkedHashMap<AbstractSymbol, CgenNode>();
+
+
+
+    //  jk: helper method to get CgenNode using class name.
+    public CgenNode getCgenNode(AbstractSymbol name){
+      if(name.equals(TreeConstants.SELF_TYPE)) return currentClass;
+      CgenNode node = taggedNodes.get(name);
+      if(node == null) Utilities.fatalError("returning null value from CgenClassTable.getCgenNode");
+      return node;
+    }   
 
 
     // The following methods emit code for constants and global
@@ -479,7 +508,8 @@ class CgenClassTable extends SymbolTable {
 
     // using DFS traverse AST, Children is another enumerable Vector
     private void setClassTagsHelper(CgenNode currNode) {
-    System.out.println("classTag = " + classTag);  // jk: delete
+    taggedNodes.put(currNode.getName(), currNode);
+    // System.out.println("classTag = " + classTag);  // jk: delete
     currNode.setTag(classTag);
     classTag += 1;
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
@@ -595,31 +625,32 @@ class CgenClassTable extends SymbolTable {
 //   jr  $ra
     public void codeObjInitializerHelper(CgenNode currNode) {
     str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL); 
-    // enterScope();  // jk: why enter new scope?
-    // Vector<attr> attrs = currNode.getAllAttrs();
-    // for (int i = 0; i < attrs.size(); i++) {  // jk: ??
-    //   StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i); // "$s0"; Ptr to self: base + offest
-    //     this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
-    //   }
-      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);  // addiu sp sp -12
-      CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str);  // sw fp sp 
-      CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str);  // sw r0, sp, 
-      CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str);  // sw
-      CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
-      CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); 
-      // jal to parent initializer
-      AbstractSymbol parent = currNode.getParent();
-      if(!parent.equals(TreeConstants.No_class)){ 
-        str.print(CgenSupport.JAL);
-        str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
-        str.println();
-      }
-      CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
-      CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
-      CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
-      CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
-      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
-      CgenSupport.emitReturn(str);  
+    enterScope();  // jk: why enter new scope?
+    Vector<attr> attrs = currNode.getAllAttrs();
+    for (int i = 0; i < attrs.size(); i++) {
+      StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i); 
+      this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
+    }
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);  // addiu sp sp -12
+    CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str);  // sw fp sp 
+    CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str);  // sw r0, sp, 
+    CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str);  // sw
+    CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+    CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); 
+    // jal to parent initializer
+    AbstractSymbol parent = currNode.getParent();
+    if(!parent.equals(TreeConstants.No_class)){ 
+      str.print(CgenSupport.JAL);
+      str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
+      str.println();
+    }
+    CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
+    CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
+    CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
+    CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
+    CgenSupport.emitReturn(str);
+    exitScope();
       
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
       CgenNode child = (CgenNode)e.nextElement();
@@ -631,9 +662,13 @@ class CgenClassTable extends SymbolTable {
     codeObjInitializerHelper(root());
     }
 
-    public void codeClassMethods() {
-    return;
-    }
+    // public void codeClassMethodsHelper(CgenNode currNode) {
+    // this.currentType = this.getName();
+    // }
+
+    // public void codeClassMethods() {
+    // codeClassMethodsHelper(root());
+    // }
 
     /** This method is the meat of the code generator.  It is to be
         filled in programming assignment 5 */
@@ -672,13 +707,76 @@ class CgenClassTable extends SymbolTable {
     //                   - the class methods
     //                   - etc...
     codeObjInitializer();
-    codeClassMethods();
+    // codeClassMethods();
     }
 
       /** Gets the root of the inheritance tree */
     public CgenNode root() {
     return (CgenNode)probe(TreeConstants.Object_);
     }
+
+    //get the next available label number
+    public int nextLabel(){
+    currentLabel++;
+    return currentLabel;
+    }
+
+    public void setCurrentClass(CgenNode node){
+    currentClass = node;
+    }
+
+    public CgenNode getCurrentClass(){
+    if (currentClass == null) Utilities.fatalError("returning null value from CgenClassTable.getCurrentClass");
+    return currentClass;
+    }
+
+    //called on method entrance; set spFromfp to 1
+    public void resetSpFromFp(){
+    spFromfp = 1;
+    }
+
+    //get the next available stack location offset relative to fp; stack grows to lower address, so this method returns a negative number
+    public int getSpFromFp(){
+    return -spFromfp;
+    }
+
+    //push the content in reg to stack; increase spFromfp accordingly
+    public void emitPush(String reg, PrintStream s) {
+    spFromfp++;
+    CgenSupport.emitStore(reg, 0, CgenSupport.SP, s);
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -4, s);
+    }
+
+   //pop the counter number of arguments from stack; decrease spFromfp accordingly
+    public void emitPop(PrintStream s, int counter) {
+    spFromfp = spFromfp - counter;
+    if(spFromfp < 1) Utilities.fatalError("sp same or below fp in method call; pop too much in CgenClassTable.emitPop");
+    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 4 * counter, s);
+ 
+    }
+
+    //store default value of clas into destRegister; used in let variable initialization
+    public void emitStoreDefaultValue(String destRegister, AbstractSymbol clas, PrintStream str){
+    if(clas.equals(TreeConstants.Int)) {
+      IntSymbol defaultInt = (IntSymbol) AbstractTable.inttable.lookup("0");
+      CgenSupport.emitLoadInt(destRegister, defaultInt, str);
+    } else if (clas.equals(TreeConstants.Bool)) {
+      CgenSupport.emitLoadBool(destRegister, BoolConst.falsebool, str);
+    } else if (clas.equals(TreeConstants.Str)) {
+      StringSymbol defaultString = (StringSymbol) AbstractTable.stringtable.lookup("");
+      CgenSupport.emitLoadString(destRegister, defaultString, str);
+    } else {
+      CgenSupport.emitMove(destRegister, CgenSupport.ZERO, str); // void
+    }
+    }
+
+    //pop the top of stack into destRegister; decrease spFromfp accordingly
+    public void emitPopFromTop(String destRegister, PrintStream s) {
+    CgenSupport.emitLoad(destRegister, 1, CgenSupport.SP, s);
+    emitPop(s, 1);
+    }
+
+
 }
         
     
