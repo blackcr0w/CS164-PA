@@ -1,6 +1,6 @@
 (*
  *  A contribution from Anne Sheets (sheets@cory)
- *
+ * ******
  *  Tests the arithmetic operations and various other things
  *)
 
@@ -28,7 +28,7 @@ class A {
 	    (new B).set_var(x);
 	 }  -- this semicolon is for aggregating the two statememts
       )
-   };
+   };  -- this semicolon is for seperating from other parallel methods
 
    method3(num : Int) : C {  -- negate
       (let x : Int in
@@ -154,7 +154,7 @@ something of type A2I, or simpl write (new A2I).method(argument).
 *)
 class A2I {
 
-     c2i(char : String) : Int {
+     c2i(char : String) : Int {  -- 直接用then充当返回值
 	if char = "0" then 0 else
 	if char = "1" then 1 else
 	if char = "2" then 2 else
