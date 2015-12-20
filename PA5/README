@@ -171,11 +171,11 @@ Instructions
 
 Write-up for PA5
 ----------------
-                        +--------------------------+
+                        + -------------------------+
                         | CS 164                   |
                         | Project 5: Code Generator|
                         | Design Document          |
-                        +--------------------------+
+                        + -------------------------+
 
                     Mingjie Zhao        <jackzhao@berkeley.edu>     cs164-cp
 
@@ -200,12 +200,35 @@ Write-up for PA5
         For prototype, the attributes and methods can be devided into two parts: inherited 
         and newly defined. And inherited attributes always comes first in the object layout.
 
-    (4) 
+    (4) Class initializers
 
+        For this part, the tricky thing is to remember initialize inherited attributes before newly
+        added attributes. Also, I set the change of frame pointer to stack pointer position at this
+        part. Still, I used depth-first search to traverse the AST.
 
+    (5) Emit code for method definitions
 
+        This part is the most time consuming one, but pretty similiar to what I did in PA3 and PA4.
+        Since when calling cgen() in cool-tree, the code generator begins to use operational semantics
+        ruls to scan the expressions and generate the code. To reduce analyzing work, I wrote many tests
+        on different expreesions to see what the generated code look like. 
+
+        The most tricky ones are let expression, case and method dispatch. But still, the principle 
+        is very similiar to PA3 and PA4, and just emitting more assembly code.
 
 2. Explanation to Test Cases
+
+    All tests are in example.cl. This file cannot compile as a whole, for the reason of covering as 
+    many tests as possible in one file. 
+
+    I defined multiple test for all expressions defined in operational semantics to test and 
+    see what the output code look like. To use it, you have to comment out other part and test one part at a time.
+
+3. Slip hours used:
+
+    Total used slip hours: 98
+
+    Slip hours left: 2
 
 
 

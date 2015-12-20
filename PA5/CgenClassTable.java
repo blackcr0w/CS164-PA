@@ -29,12 +29,12 @@ import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.LinkedHashMap;
 
-//StackLocation class is used to store the correct location to retrieve an attribute, a method argument and a temporary variable.
-class StackLocation {
+//StaLoc class is used to store the correct location to retrieve an attribute, a method argument and a temporary variable.
+class StaLoc {
   public String baseRegister;
   public int offset;
 
-    public StackLocation(String reg, int off){
+    public StaLoc(String reg, int off){
         baseRegister = reg; 
         offset = off;
     }
@@ -624,33 +624,51 @@ class CgenClassTable extends SymbolTable {
 //   addiu $sp $sp 12
 //   jr  $ra
     public void codeObjInitializerHelper(CgenNode currNode) {
-    str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL); 
-    enterScope();  // jk: why enter new scope?
+    str.print(currNode.name.getString() + CgenSupport.CLASSINIT_SUFFIX + CgenSupport.LABEL);
+    enterScope();
     Vector<attr> attrs = currNode.getAllAttrs();
     for (int i = 0; i < attrs.size(); i++) {
-      StackLocation newLoc = new StackLocation(CgenSupport.SELF, 3 + i); 
-      this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
-    }
-    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);  // addiu sp sp -12
-    CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str);  // sw fp sp 
-    CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str);  // sw r0, sp, 
-    CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str);  // sw
-    CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
-    CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); 
-    // jal to parent initializer
-    AbstractSymbol parent = currNode.getParent();
-    if(!parent.equals(TreeConstants.No_class)){ 
-      str.print(CgenSupport.JAL);
-      str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
-      str.println();
-    }
-    CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
-    CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
-    CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
-    CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
-    CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
-    CgenSupport.emitReturn(str);
-    exitScope();
+      StaLoc newLoc = new StaLoc(CgenSupport.SELF, 3 + i); 
+        this.addId(attrs.get(i).name, newLoc);//store the location of an attribute in the CgenClassTable
+      }
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, -12, str);
+      CgenSupport.emitStore(CgenSupport.FP, 3, CgenSupport.SP, str); //store old fp
+      CgenSupport.emitStore(CgenSupport.SELF, 2, CgenSupport.SP, str); //store old self
+      CgenSupport.emitStore(CgenSupport.RA, 1, CgenSupport.SP, str); //store old return address
+      //enter the initializer function
+      resetSpFromFp();
+      //fp points to the ra
+      CgenSupport.emitAddiu(CgenSupport.FP, CgenSupport.SP, 4, str);
+      CgenSupport.emitMove(CgenSupport.SELF, CgenSupport.ACC, str); //update SELF to reference the object being initialized
+      AbstractSymbol parent = currNode.getParent();
+      //initialized parent first; all inherited attributes get initialized
+      if(!parent.equals(TreeConstants.No_class)){ 
+        str.print(CgenSupport.JAL);
+        str.print(parent.getString() + CgenSupport.CLASSINIT_SUFFIX);
+        str.println();
+      }
+      //now initialized all locally-defined attributes
+      setCurrentClass(currNode);
+      for (attr att: currNode.getLocalAttrs()) {
+        if (att.init instanceof no_expr) continue;
+        att.init.code(str, this);
+        int offset = currNode.getAttrOffset(att.name);
+        CgenSupport.emitStore(CgenSupport.ACC, offset, CgenSupport.SELF, str); //store the initialization result in the correct attribute slot
+        //in case the garbage collector is enabled, we need to report assignment to gc. 
+        if(Flags.cgen_Memmgr == 1){
+            CgenSupport.emitAddiu(CgenSupport.A1, CgenSupport.SELF, 4 * offset, str);
+            CgenSupport.emitGCAssign(str);    
+        }
+      }
+      setCurrentClass(null);
+
+      CgenSupport.emitMove(CgenSupport.ACC, CgenSupport.SELF, str); //restore accumulator to the object which is already initialized
+      CgenSupport.emitLoad(CgenSupport.FP, 3, CgenSupport.SP, str); //restore old fp
+      CgenSupport.emitLoad(CgenSupport.SELF, 2, CgenSupport.SP, str); //restore old self
+      CgenSupport.emitLoad(CgenSupport.RA, 1, CgenSupport.SP, str); //restore old return address
+      CgenSupport.emitAddiu(CgenSupport.SP, CgenSupport.SP, 12, str); //pop old fp, self and return address off stack
+      CgenSupport.emitReturn(str);
+      exitScope();
       
     for (Enumeration<CgenNode> e = currNode.getChildren(); e.hasMoreElements(); ) {
       CgenNode child = (CgenNode)e.nextElement();

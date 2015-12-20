@@ -1,0 +1,11 @@
+#!/bin/sh
+
+./myparser $1 > $1.out.temp 2>&1
+cat $1.out.temp | sed 's/#[0-9]*/#/g' > $1.out.my
+rm $1.out.temp
+
+./ref-parser $1 > $1.out.temp 2>&1
+cat $1.out.temp | sed 's/#[0-9]*/#/g' > $1.out.ref
+rm $1.out.temp
+
+gdiff -q $1.out.my $1.out.ref

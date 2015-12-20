@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="test" default="source">  
+  <description>
+    CS164 Programming Assignment #1
+  </description>
+
+  <!-- set global properties for this build -->
+  <property environment="env"/> 
+  <property name="classdir" value="${env.MASTERDIR}"/>
+  <property name="assn" value=" 1"/>
+  <property name="class" value="cs164"/>
+  <property name="src" value="stack.cl run README"/>
+  <property name="lsrc" value=" atoi.cl stack.test"/>
+
+  <!-- target: test -->
+  <target name="test" depends="compile">
+    <echo message="stack.test"/>
+    <exec executable="spim" input="stack.test">
+      <arg line="-file stack.s"/>
+    </exec>
+  </target>
+
+  <!-- target: clean --> 
+  <target name="clean">
+    <delete>
+      <fileset dir="." includes="*.s"/>
+      <fileset file="./core"/>
+      <fileset dir="." includes="~*"/> 
+    </delete>
+  </target>
+
+  <!-- target: compile -->
+  <target name="compile" depends="sourceCheck" unless="isSourceUpToDate">
+    <exec executable="${classdir}/bin/coolc">
+      <arg line="stack.cl atoi.cl"/>
+    </exec>
+  </target>
+
+  <!-- target: source Check-->
+  <target name="sourceCheck">
+    <uptodate 
+      property="isSourceUpToDate"
+      targetfile="./stack.s">
+      <srcfiles file="./stack.cl"/>
+      <srcfiles file="./atoi.cl"/>
+    </uptodate>
+  </target>
+
+  <!-- targe: source-->
+  <target name="source">
+    <exec executable="${classdir}/etc/link-shared">
+      <arg line="${assn} ${lsrc}"/>
+    </exec>
+    <exec executable="${classdir}/etc/copy">
+      <arg line="${assn} ${src}"/>
+    </exec>
+    <chmod perm="u+rx" file="run"/>
+  </target>
+</project>
+

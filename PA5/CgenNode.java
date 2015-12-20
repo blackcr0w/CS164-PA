@@ -246,7 +246,17 @@ class CgenNode extends class_c {
         }
         Utilities.fatalError("can't find method in CgenNode.getMethodOffset");
         return -1;
-    }          
+    }    
+
+    //get attribute offset
+    int getAttrOffset(AbstractSymbol attrName){
+        Vector<attr> attrs = getAllAttrs();
+        for(int i = 0; i < attrs.size(); i++){
+            if(attrs.get(i).name.equals(attrName)) return (3 + i);
+        }
+        Utilities.fatalError("can't find attr in CgenNode.getAttrOffset");
+        return -1;
+    }
 
     // Vector<MethodNode> localMethods = new Vector<MethodNode>();
     // for (MethodNode met : this.methods) {

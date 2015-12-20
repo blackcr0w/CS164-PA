@@ -2,13 +2,12 @@
 (*  Example cool program testing as many aspects of the code generator
     as possible.
  *)
--------------------------------------------------------------------------
+
 (*from original example.cl*)
 class Main {
   main():Int { 0 };
 };
 
--------------------------------------------------------------------------
 (*test abort method*)
 class Main inherits IO{
 	main(): Int {
@@ -19,7 +18,7 @@ class Main inherits IO{
 	};
 };
 (*it will print abort from Main*)
----------------------------------------------------------------------------
+
 (*test simple comparisons*)
 
 class A {
@@ -43,17 +42,17 @@ class Main inherits IO {
 
 	main(): Object{
 		{
-		if x=y then out_string("correct\n") else out_string("incorrect\n") fi; -----------------------Object compares reference, if they have the same reference it will be considered equal
-		if x=z then out_string("incorrect\n") else out_string("correct\n") fi; -----------------------Object compares reference, actual value are not used to test the equality
-		if a=b then out_string("correct\n") else out_string("incorrect\n") fi; -----------------------String object tests actual content
-		if c=d then out_string("correct\n") else out_string("incorrect\n") fi; -----------------------Bool object tests actual content
-		if e=f then out_string("correct\n") else out_string("incorrect\n") fi; -----------------------Int object tests actual content
+		if x=y then out_string("correct\n") else out_string("incorrect\n") fi; 
+		if x=z then out_string("incorrect\n") else out_string("correct\n") fi; 
+		if a=b then out_string("correct\n") else out_string("incorrect\n") fi; 
+		if c=d then out_string("correct\n") else out_string("incorrect\n") fi; 
+		if e=f then out_string("correct\n") else out_string("incorrect\n") fi; 
 		}
 	};
 };
 
 (*expected results to be all correct*)
--------------------------------------------------------------------------------
+
 (*test case statements and simple let statement, this test is from the given test 5.cl*)
 
 class Main inherits IO
@@ -69,7 +68,7 @@ class Main inherits IO
 };
 
 (*expected result will be: No match in case statement for Class Main*)
------------------------------------------------------------------------------------
+
 (*Test if it will pick the most specific branch then choose the most generic branch no matter the order case branches are given.*)
 
 class Main inherits IO
@@ -84,7 +83,7 @@ class Main inherits IO
 };
 
 (*the expected output is main. Reason is sated above*)
--------------------------------------------------------------------------------
+
 (*test nested let statement, not statement this test is from the given test 4.cl*)
 
 class Main inherits IO
@@ -103,7 +102,7 @@ class Main inherits IO
          let foo:Bool in
            if not foo then
              let foo : Int in 
-               print(foo+1) ---------------------- prints 1
+               print(foo+1) 
            else
              5
            fi
@@ -112,12 +111,11 @@ class Main inherits IO
 
 (*expected result is 1*)
 
---------------------------------------------------------------------------------------------------------------------
 (*test isvoid expression and not expression to see if they work correctly*)
-Class A{
-}
+class A{
+};
 
-Class Main inherits IO {
+class Main inherits IO {
   x : Int <- 1;
   y : Int;
   a : A <- new A;
@@ -135,7 +133,7 @@ Class Main inherits IO {
 };
 
 (*expected results are all correct*)
------------------------------------------------------------------------------------------------------------------
+ ----------------------------------
 (*scoping test. Using same symbols in multiple scopes to test the compiler's ability to deal with multiscope tasks*)
 
 class B inherits IO {
@@ -169,10 +167,10 @@ class Main inherits B {
  *y=20
  *y=90
  *y=95*)
------------------------------------------------------------------------------------------------------------------
+ ----------------------------------
 (*test complicated case statements, let statement and several comparisons in a case inside case program*)
 
-Class Main inherits IO {
+class Main inherits IO {
   main(): SELF_TYPE {
     case 5 of												------------------it will go to type Int branch
     a : Bool => out_string("Bool");
@@ -241,7 +239,7 @@ class Main inherits IO {
 	}
 	};
 };
--------------------------------------------------------------------------------
+ 
 (*string.length() method test *)
 
 class Main inherits IO {
@@ -252,7 +250,6 @@ class Main inherits IO {
 	}
 	};
 };
---------------------------------------------------------------------------------
 (*test calling a method in its own class *)
 
 class Main inherits IO {
@@ -267,7 +264,6 @@ class Main inherits IO {
 };
 
 
-------------------------------------------------------------------------------------------
 (*test method that takes arguments*)
 
 class Main inherits IO{
@@ -288,7 +284,7 @@ class Main inherits IO{
 (*expected output is: 6  *)
 
 
----------------------------------------------------------------------------------
+ --
 (*test simple arithmetic operations*)
 
 Class Main inherits IO{
@@ -297,7 +293,7 @@ Class Main inherits IO{
   };
 };
 
---------------------------------------------------------------------------------
+ -
 (*negation tests*)
 
 class Main inherits IO {
@@ -317,7 +313,6 @@ class Main inherits IO {
 };
 };
 
----------------------------------------------------------------------------------
 (*test type_name method*)
 
 class Main inherits IO {	
@@ -328,7 +323,6 @@ class Main inherits IO {
 	}
 	};
 };
----------------------------------------------------------------------------------
 (*Dispatch to void*)
 
 class Main inherits IO {	
@@ -336,7 +330,6 @@ class Main inherits IO {
 		let a:Object in a.type_name()  -------------x is not initialized, so it will say Dispatch to void
 	};
 };
------------------------------------------------------------------------------------
 (*another Dispatch to void*)
 class A {
     m() : Int {0};
@@ -351,16 +344,14 @@ class Main {
 };
 
 (*expected outout: Dispatch to void *)
------------------------------------------------------------------------------------
 (* Match on void in case statement*)
 class Main inherits IO {	
 	main():String {
 		let x:Object in 
-			case x of x : Object => x.type_name() ; --- x is not a type, so it will print match on void in case statement.
+			case x of x : Object => x.type_name();
 	};
 };
 
------------------------------------------------------------------------------------
 (*test static Dispatch and static dispatch to void*)
 
 Class A {
@@ -384,7 +375,6 @@ Class Main inherits IO {
   };
 };
 
------------------------------------------------------------------------------------
 (*test inheritance and override method*)
 
 class A inherits IO{
@@ -421,7 +411,7 @@ class Main {
     };    
 };
 
-------------------------------------------------------------------------------------------------------------
+ -----------------------------
 (*test case with no right branch *)
 class A {
 };
@@ -445,7 +435,7 @@ class Main inherits IO {
 
 (*The result will be: No match in case statement for Class A since a does not match any of the branches*)
 
------------------------------------------------------------------------------------------------------------------
+ ----------------------------------
 (*test case with void*)
 class A {
 };
@@ -470,7 +460,7 @@ class Main inherits IO {
 (*since a is not initialized, a is void, and it does not match any of the case branches*)
 (*it will print out Match on void in case statement*)
 
--------------------------------------------------------------------------------------------------------------------
+ ------------------------------------
 (*simple loop test*)
 Class Main inherits IO {
   x : Int <- 0;
@@ -485,7 +475,7 @@ Class Main inherits IO {
 
 (*expected result:0 1 2 3 4 *)
 
--------------------------------------------------------------------------------------------------------------------
+ ------------------------------------
 (*equality test on void that is returned by a while loop*)
 
 class Main inherits IO {
@@ -528,7 +518,7 @@ class Main inherits IO {
 *yes
 *)
 
--------------------------------------------------------------------------------------------------------------------------------------------
+ ------------------------------------------------------------
 (*simple garbage collection test*)
 
 Class Main inherits IO {
@@ -549,7 +539,7 @@ Class Main inherits IO {
  *Garbage collecting ... occasionally
 *)
 
----------------------------------------------------------------------------------------------------------------------------------------------
+ --------------------------------------------------------------
 (* Folllowing tests are from the resources provided for this CS164 to test the whether the compiler can deal with a big chunk of cool code*)
 
 
@@ -566,7 +556,7 @@ class Main inherits IO {
 
 (*it should output: cool*)
 
-------------------------------------------------------------------------------------------------------------------------------------
+ -----------------------------------------------------
 (*from list.cl*)
 
 (*
@@ -624,42 +614,6 @@ class List {
 };
 
 
-(*
- *  Cons inherits all operations from List. We can reuse only the cons
- *  method though, because adding an element to the front of an emtpy
- *  list is the same as adding it to the front of a non empty
- *  list. All other methods have to be redefined, since the behaviour
- *  for them is different from the empty list.
- *
- *  Cons needs two attributes to hold the integer of this list
- *  cell and to hold the rest of the list.
- *
- *  The init() method is used by the cons() method to initialize the
- *  cell.
- *)
-
-class Cons inherits List {
-
-   car : Int;	-- The element in this list cell
-
-   cdr : List;	-- The rest of the list
-
-   isNil() : Bool { false };
-
-   head()  : Int { car };
-
-   tail()  : List { cdr };
-
-   init(i : Int, rest : List) : List {
-      {
-	 car <- i;
-	 cdr <- rest;
-	 self;
-      }
-   };
-
-};
-
 
 
 (*
@@ -708,69 +662,6 @@ class Main inherits IO {
 
 };
 
-(*expected output
- *5 4 3 2 1
- *4 3 2 1
- *3 2 1
- *2 1
- *1      
- *)
-
-------------------------------------------------------------------------------------------------------------------------------
-(*from complex.cl*)
-
-class Main inherits IO {
-    main() : SELF_TYPE {
-	(let c : Complex <- (new Complex).init(2, 3) in
-	    if c.reflect_X().reflect_Y() = c.reflect_0()
-	    then out_string("=)\n")
-	    else out_string("=(\n")
-	    fi
-	)
-    };
-};
-
-class Complex inherits IO {
-    x : Int;
-    y : Int;
-
-    init(a : Int, b : Int) : Complex {
-	{
-	    x = a;
-	    y = b;
-	    self;
-	}
-    };
-
-    print() : Object {
-	if y = 0
-	then out_int(x)
-	else out_int(x).out_string("+").out_int(y).out_string("I")
-	fi
-    };
-
-    reflect_0() : Complex {
-	{
-	    x = ~x;
-	    y = ~y;
-	    self;
-	}
-    };
-
-    reflect_X() : Complex {
-	{
-	    y = ~y;
-	    self;
-	}
-    };
-
-    reflect_Y() : Complex {
-	{
-	    x = ~x;
-	    self;
-	}
-    };
-};
 
 (*it should output:=)
  *COOL program successfully executed
